@@ -1,0 +1,38 @@
+{
+  "code": 0,
+  "msg": "success",
+  "time": 1234567890,
+  "data": {
+    "name": "My Weather Station",
+    "mac": "AA:BB:CC:DD:EE:FF",
+    "model": "GW1000",
+    "status": "online",
+    "last_seen": "2024-01-01T12:00:00Z",
+    "firmware_version": "1.2.3",
+    "location": {
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "altitude": 10
+    },
+    "timezone": "America/New_York",
+    "battery_level": 85,
+    "signal_strength": -45,
+    "sensors": [
+      {
+        "type": "temperature",
+        "unit": "celsius",
+        "last_reading": "2024-01-01T12:00:00Z"
+      },
+      {
+        "type": "humidity",
+        "unit": "percent",
+        "last_reading": "2024-01-01T12:00:00Z"
+      },
+      {
+        "type": "pressure",
+        "unit": "hpa",
+        "last_reading": "2024-01-01T12:00:00Z"
+      }
+    ]
+  }
+}

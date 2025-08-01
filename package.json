@@ -1,0 +1,51 @@
+{
+  "name": "ecowitt-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Ecowitt Weather API v3 integration",
+  "type": "module",
+  "main": "server/index.js",
+  "bin": {
+    "ecowitt-mcp": "./server/index.js"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "check": "biome check --write . && vitest run"
+  },
+  "keywords": [
+    "mcp",
+    "ecowitt",
+    "weather",
+    "api",
+    "weather-station",
+    "message-control-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "debug": "^4.3.4",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.7.3",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/ecowitt-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/ecowitt-mcp/issues"
+  },
+  "homepage": "https://github.com/username/ecowitt-mcp#readme"
+}

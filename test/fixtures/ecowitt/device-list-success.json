@@ -1,0 +1,51 @@
+{
+  "code": 0,
+  "msg": "success",
+  "time": "1646736220",
+  "data": {
+    "total": 2,
+    "totalPage": 1,
+    "pageNum": 1,
+    "list": [
+      {
+        "id": 1050,
+        "name": "Weather Station Main",
+        "mac": "AA:BB:CC:DD:EE:FF",
+        "type": 1,
+        "date_zone_id": "America/New_York",
+        "createtime": 1642561960,
+        "longitude": -74.006,
+        "latitude": 40.7128,
+        "stationtype": "EasyWeatherV1.6.1",
+        "iotdevice_list": [
+          {
+            "name": "Indoor Sensor",
+            "default_title": "AC1100-001234",
+            "device_id": "AbCd1234567890EfGh",
+            "version": "1.2.3",
+            "createtime": 1705038104
+          },
+          {
+            "name": "Outdoor Multi Sensor",
+            "default_title": "WFC01-005678",
+            "device_id": "XyZ9876543210AbCdE",
+            "version": "2.1.0",
+            "createtime": 1705038104
+          }
+        ]
+      },
+      {
+        "id": 944,
+        "name": "Garden Station",
+        "mac": "11:22:33:44:55:66",
+        "imei": "863879049793071",
+        "type": 1,
+        "date_zone_id": "America/New_York",
+        "createtime": 1636684950,
+        "longitude": -74.004,
+        "latitude": 40.714,
+        "stationtype": "WS6006_V1.1.26"
+      }
+    ]
+  }
+}
