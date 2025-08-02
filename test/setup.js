@@ -1,13 +1,10 @@
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import dotenv from "dotenv";
+
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Load environment variables for testing
-dotenv.config({ path: join(__dirname, "..", ".env.test"), quiet: true });
 
 // Global test setup
 beforeAll(() => {

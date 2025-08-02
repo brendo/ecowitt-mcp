@@ -72,9 +72,11 @@ describe("EcowittClient", () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "User-Agent": "ecowitt-mcp/1.0.0",
+            "User-Agent": "ecowitt-mcp/0.0.1-dev",
           },
-          signal: expect.any(AbortSignal),
+          signal: expect.objectContaining({
+            aborted: false,
+          }),
         }
       );
 

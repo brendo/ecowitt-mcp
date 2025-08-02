@@ -1,6 +1,6 @@
 {
   "name": "ecowitt-mcp",
-  "version": "1.0.0",
+  "version": "0.0.1-dev",
   "description": "MCP server for Ecowitt Weather API v3 integration",
   "type": "module",
   "main": "server/index.js",
@@ -8,8 +8,8 @@
     "ecowitt-mcp": "./server/index.js"
   },
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "node --watch server/index.js",
+    "start": "node --env-file=.env server/index.js",
+    "dev": "node --env-file=.env --watch server/index.js",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -26,26 +26,25 @@
     "weather-station",
     "message-control-protocol"
   ],
-  "author": "",
+  "author": "Brendan Abbott",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "debug": "^4.3.4",
-    "dotenv": "^16.4.5"
+    "debug": "^4.3.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.7.3",
-    "vitest": "^1.6.0"
+    "@biomejs/biome": "^2.1.3",
+    "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.6.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/username/ecowitt-mcp.git"
+    "url": "git+https://github.com/brendo/ecowitt-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/username/ecowitt-mcp/issues"
+    "url": "https://github.com/brendo/ecowitt-mcp/issues"
   },
-  "homepage": "https://github.com/username/ecowitt-mcp#readme"
+  "homepage": "https://github.com/brendo/ecowitt-mcp#readme"
 }

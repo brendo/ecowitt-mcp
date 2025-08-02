@@ -23,7 +23,6 @@ This project implements a Message Control Protocol (MCP) server for the Ecowitt 
 - `@modelcontextprotocol/sdk`: MCP server framework
 - `@biomejs/biome`: Modern all-in-one dev toolkit (linting, formatting)
 - `vitest`: Modern, fast testing framework
-- `dotenv`: Configuration management
 - `debug`: Debugging utilities
 - Built-in Node.js modules (e.g., `node:events`, `node:crypto`, native `fetch` API)
 
