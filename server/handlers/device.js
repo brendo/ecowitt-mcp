@@ -1,4 +1,7 @@
 import { EcowittClient } from "../../ecowitt/client.js";
+import { DeviceNotFoundError } from "../../ecowitt/errors.js";
+import { CustomError, HandlerError } from "../../utils/errors.js";
+import { validateRequired } from "../../utils/validation.js";
 
 /**
  * Device handlers for MCP device operations
@@ -17,78 +20,80 @@ export class DeviceHandlers {
   }
 
   /**
-   * Handle device.list MCP message
-   * @returns {Promise<Object>} List of devices or error response
+   * Fetches devices from Ecowitt API and transforms them into a list
+   * suitable for MCP Resources.
+   * On success, returns an array of transformed device objects.
+   * On failure, throws an error.
+   * @returns {Promise<Array<Object>>} Array of transformed device objects (suitable for MCP Resource)
+   * @throws {EcowittApiError|CustomError|HandlerError} If the API call fails or encounters a processing error.
    */
   async handleDeviceList() {
+    const rawDevices = await this.client.listDevices();
+    return rawDevices.map((device) => ({
+      uri: `ecowitt://device/${device.mac.replace(/:/g, "")}`,
+      name: device.name,
+      title: device.name,
+      description: `Ecowitt weather station: ${device.stationType || "Unknown Type"}`,
+      mac: device.mac, // Keep raw MAC for internal use like getDeviceByName
+    }));
+  }
+
+  /**
+   * Get a device by MAC address from Ecowitt API.
+   * @param {string} macAddress - MAC address of the device to find
+   * @returns {Promise<Object>} Raw device object from Ecowitt API
+   * @throws {CustomError|EcowittApiError|DeviceNotFoundError|HandlerError} If device not found, invalid parameter, API call fails, or an unexpected error occurs.
+   */
+  async getDeviceByMac(macAddress) {
     try {
-      const result = await this.client.listDevices();
-      return result;
+      validateRequired("MAC address", macAddress);
     } catch (error) {
-      return {
-        success: false,
-        error: {
-          code: "HANDLER_ERROR",
-          message: error.message,
-          type: "handler_error",
-        },
-      };
+      throw new CustomError(error.message, "INVALID_PARAMETER", "parameter_error");
+    }
+
+    try {
+      const deviceData = await this.client.getDeviceInfo(macAddress);
+      if (!deviceData || Object.keys(deviceData).length === 0) {
+        throw new DeviceNotFoundError(macAddress);
+      }
+      return deviceData;
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new HandlerError(`An unexpected error occurred in getDeviceByMac: ${error.message}`, error);
     }
   }
 
   /**
    * Get a device by name (helper method for name-to-MAC resolution)
    * @param {string} deviceName - Name of the device to find
-   * @returns {Promise<Object>} Device object or error response
+   * @returns {Promise<Object>} Raw device object from Ecowitt API
+   * @throws {DeviceNotFoundError|CustomError|HandlerError} If device not found or an error occurs.
    */
   async getDeviceByName(deviceName) {
-    // Validate input
-    if (!deviceName || typeof deviceName !== "string" || deviceName.trim() === "") {
-      return {
-        success: false,
-        error: {
-          code: "INVALID_PARAMETER",
-          message: "Device name is required",
-          type: "parameter_error",
-        },
-      };
+    try {
+      validateRequired("Device name", deviceName);
+    } catch (error) {
+      throw new CustomError(error.message, "INVALID_PARAMETER", "parameter_error");
     }
 
     try {
-      const result = await this.handleDeviceList();
+      const resources = await this.handleDeviceList();
 
-      if (!result.success) {
-        return result;
-      }
-
-      // Find device by name (case-insensitive)
       const normalizedName = deviceName.toLowerCase().trim();
-      const device = result.devices.find((d) => d.name.toLowerCase() === normalizedName);
+      const resource = resources.find((r) => r.name.toLowerCase() === normalizedName);
 
-      if (!device) {
-        return {
-          success: false,
-          error: {
-            code: "DEVICE_NOT_FOUND",
-            message: `Device "${deviceName}" not found`,
-            type: "device_error",
-          },
-        };
+      if (!resource) {
+        throw new DeviceNotFoundError(deviceName);
       }
 
-      return {
-        success: true,
-        device,
-      };
+      return this.getDeviceByMac(resource.mac);
     } catch (error) {
-      return {
-        success: false,
-        error: {
-          code: "HANDLER_ERROR",
-          message: error.message,
-          type: "handler_error",
-        },
-      };
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new HandlerError(`An unexpected error occurred in getDeviceByName: ${error.message}`, error);
     }
   }
 }

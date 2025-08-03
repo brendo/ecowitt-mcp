@@ -18,45 +18,6 @@ export function loadFixture(category, name) {
 }
 
 /**
- * Load multiple fixtures at once
- * @param {Object} fixtures - Object mapping names to [category, filename] pairs
- * @returns {Object} Object with fixture data keyed by name
- *
- * @example
- * const fixtures = loadFixtures({
- *   deviceListSuccess: ['ecowitt', 'device-list-success'],
- *   deviceListEmpty: ['ecowitt', 'device-list-empty'],
- * });
- */
-export function loadFixtures(fixtures) {
-  const result = {};
-  for (const [name, [category, filename]] of Object.entries(fixtures)) {
-    result[name] = loadFixture(category, filename);
-  }
-  return result;
-}
-
-/**
- * Load all fixtures from a category
- * @param {string} category - Category subdirectory
- * @returns {Object} Object with all fixtures in the category
- */
-export function loadCategoryFixtures(category) {
-  // This is a simple implementation - could be enhanced to auto-discover files
-  switch (category) {
-    case "ecowitt":
-      return loadFixtures({
-        deviceListSuccess: ["ecowitt", "device-list-success"],
-        deviceListEmpty: ["ecowitt", "device-list-empty"],
-        deviceListError: ["ecowitt", "device-list-error"],
-        deviceInfoSuccess: ["ecowitt", "device-info-success"],
-      });
-    default:
-      throw new Error(`Unknown fixture category: ${category}`);
-  }
-}
-
-/**
  * Create a deep clone of fixture data to avoid mutations between tests
  * @param {Object} fixture - Fixture data to clone
  * @returns {Object} Deep cloned fixture data

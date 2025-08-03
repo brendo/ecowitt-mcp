@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "../config/index.js";
 import { DeviceHandlers } from "./handlers/device.js";
+import { toMcpErrorResponse } from "./utils/mcp_error_handler.js";
 
 /**
  * Create and configure the MCP server
@@ -11,7 +12,7 @@ import { DeviceHandlers } from "./handlers/device.js";
  * @returns {Promise<McpServer>} Configured MCP server instance
  */
 export async function createMCPServer(ecowittConfig = config.ecowitt) {
-  // Create the MCP server
+  // Create the MCP server and advertise capabilities for resources
   const server = new McpServer(
     {
       name: config.server.name,
@@ -19,7 +20,12 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
     },
     {
       capabilities: {
+        resources: {
+          listChanged: false, // Set to true if you implement notifications
+          subscribe: false, // Set to true if you implement subscriptions
+        },
         tools: {},
+        // Tools capability will be added back when weather tools are implemented
       },
     }
   );
@@ -27,41 +33,35 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
   // Create device handlers
   const deviceHandlers = new DeviceHandlers(ecowittConfig);
 
-  // Register device.list tool
-  server.tool("device_list", "List all Ecowitt weather devices", {}, async () => {
-    try {
-      const result = await deviceHandlers.handleDeviceList();
+  // Register the standard 'resources' primitive
+  server.registerResource(
+    "devices",
+    new ResourceTemplate("ecowitt://device/{mac}", {
+      list: async () => {
+        try {
+          const resources = await deviceHandlers.handleDeviceList();
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                success: false,
-                error: {
-                  code: "MCP_HANDLER_ERROR",
-                  message: error.message,
-                  type: "mcp_error",
-                },
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
-    }
-  });
+          return { resources };
+        } catch (error) {
+          // Centralized error handling for any issues during the operation
+          return toMcpErrorResponse(error);
+        }
+      },
+    }),
+    {
+      title: "Ecowitt Devices",
+      description: "Access Ecowitt weather station device information.",
+      mimeType: "application/json",
+    },
+    async (uri, { mac }) => ({
+      contents: [
+        {
+          uri: uri.href,
+          text: `Test content ${mac}`,
+        },
+      ],
+    })
+  );
 
   return server;
 }

@@ -1,43 +1,48 @@
 /**
  * Ecowitt API error classification and handling utilities
  */
-/** biome-ignore-all lint/complexity/noStaticOnlyClass: Stylistic */
-export class EcowittErrorClassifier {
+import { CustomError } from "../utils/errors.js";
+
+/**
+ * Error specifically for issues with the Ecowitt API.
+ * Includes mappings for Ecowitt API specific error codes.
+ */
+export class EcowittApiError extends CustomError {
   /**
-   * Error type constants
+   * Ecowitt API error type classifications.
    */
   static ErrorTypes = {
     SERVER_BUSY: "server_busy_error",
     AUTHENTICATION: "authentication_error",
     PARAMETER: "parameter_error",
     DEVICE: "device_error",
-    CLIENT: "client_error",
-    SERVER: "server_error",
-    UNKNOWN: "unknown_error",
+    CLIENT: "client_error", // Generic client-side error (4xx)
+    SERVER: "server_error", // Generic server-side error (5xx)
+    UNKNOWN: "unknown_error", // Uncategorized error
   };
 
   /**
-   * Ecowitt-specific error code mappings
+   * Ecowitt-specific error code to internal error type mapping.
    */
   static ErrorCodeMap = {
-    [-1]: "server_busy_error",
-    40000: "parameter_error",
-    40010: "authentication_error", // Illegal Application_Key Parameter
-    40011: "authentication_error", // Illegal Api_Key Parameter
-    40012: "device_error", // Illegal MAC/IMEI Parameter
-    40013: "parameter_error", // Illegal start_date Parameter
-    40014: "parameter_error", // Illegal end_date Parameter
-    40015: "parameter_error", // Illegal cycle_type Parameter
-    40016: "parameter_error", // Illegal call_back Parameter
-    40017: "parameter_error", // Missing Application_Key Parameter
-    40018: "parameter_error", // Missing Api_Key Parameter
-    40019: "device_error", // Missing MAC Parameter
-    40020: "parameter_error", // Missing start_date Parameter
-    40021: "parameter_error", // Missing end_date Parameter
+    [-1]: EcowittApiError.ErrorTypes.SERVER_BUSY,
+    40000: EcowittApiError.ErrorTypes.PARAMETER,
+    40010: EcowittApiError.ErrorTypes.AUTHENTICATION, // Illegal Application_Key Parameter
+    40011: EcowittApiError.ErrorTypes.AUTHENTICATION, // Illegal Api_Key Parameter
+    40012: EcowittApiError.ErrorTypes.DEVICE, // Illegal MAC/IMEI Parameter
+    40013: EcowittApiError.ErrorTypes.PARAMETER, // Illegal start_date Parameter
+    40014: EcowittApiError.ErrorTypes.PARAMETER, // Illegal end_date Parameter
+    40015: EcowittApiError.ErrorTypes.PARAMETER, // Illegal cycle_type Parameter
+    40016: EcowittApiError.ErrorTypes.PARAMETER, // Illegal call_back Parameter
+    40017: EcowittApiError.ErrorTypes.PARAMETER, // Missing Application_Key Parameter
+    40018: EcowittApiError.ErrorTypes.PARAMETER, // Missing Api_Key Parameter
+    40019: EcowittApiError.ErrorTypes.DEVICE, // Missing MAC Parameter
+    40020: EcowittApiError.ErrorTypes.PARAMETER, // Missing start_date Parameter
+    40021: EcowittApiError.ErrorTypes.PARAMETER, // Missing end_date Parameter
   };
 
   /**
-   * Standard error messages for Ecowitt error codes
+   * Standard error messages for Ecowitt API error codes.
    */
   static ErrorMessages = {
     [-1]: "System is busy.",
@@ -57,109 +62,57 @@ export class EcowittErrorClassifier {
   };
 
   /**
-   * Classify an error based on Ecowitt error code and message
-   * @param {number} code - Error code from API response
-   * @param {string} message - Error message from API response
-   * @returns {Object} Classified error object
+   * Creates an instance of EcowittApiError.
+   * @param {number} apiResponseCode - The numerical error code from the Ecowitt API.
+   * @param {string} [apiResponseMessage="An unknown Ecowitt API error occurred."] - The message from the Ecowitt API.
+   * @param {Error} [originalError=null] - The original error (e.g., network error, Fetch API error).
    */
-  static classifyError(code, message) {
-    let type = EcowittErrorClassifier.ErrorCodeMap[code];
+  constructor(apiResponseCode, apiResponseMessage = "An unknown Ecowitt API error occurred.", originalError = null) {
+    const defaultMessage = EcowittApiError.ErrorMessages[apiResponseCode] || apiResponseMessage;
+    let mappedType = EcowittApiError.ErrorCodeMap[apiResponseCode];
 
-    // If no specific mapping, fall back to HTTP status code patterns
-    if (!type) {
-      if (code >= 400 && code < 500) {
-        type = EcowittErrorClassifier.ErrorTypes.CLIENT;
-      } else if (code >= 500 && code < 600) {
-        type = EcowittErrorClassifier.ErrorTypes.SERVER;
+    // Fallback classification if no specific mapping
+    if (!mappedType) {
+      if (apiResponseCode >= 400 && apiResponseCode < 500) {
+        mappedType = EcowittApiError.ErrorTypes.CLIENT;
+      } else if (apiResponseCode >= 500 && apiResponseCode < 600) {
+        mappedType = EcowittApiError.ErrorTypes.SERVER;
       } else {
-        type = EcowittErrorClassifier.ErrorTypes.UNKNOWN;
+        mappedType = EcowittApiError.ErrorTypes.UNKNOWN;
       }
     }
 
-    return {
-      code,
-      message,
-      type,
-    };
+    super(defaultMessage, apiResponseCode, mappedType);
+    this.name = "EcowittApiError";
+    this.apiResponseCode = apiResponseCode;
+    this.apiResponseMessage = apiResponseMessage;
+    this.originalError = originalError;
   }
 
   /**
-   * Check if an error code indicates an authentication problem
-   * @param {number} code - Error code to check
-   * @returns {boolean} True if authentication error
+   * Checks if the Ecowitt API error is retryable.
+   * @returns {boolean} True if the error indicates a transient issue and can be retried.
    */
-  static isAuthenticationError(code) {
+  isRetryable() {
     return (
-      EcowittErrorClassifier.ErrorCodeMap[code] === EcowittErrorClassifier.ErrorTypes.AUTHENTICATION
+      this.apiResponseCode === -1 || // System busy
+      (this.apiResponseCode >= 500 && this.apiResponseCode < 600) || // Server errors
+      this.apiResponseCode === 429 // Standard HTTP rate limiting code, even if not explicitly in Ecowitt map.
     );
   }
+}
 
+/**
+ * Error for when a requested device is not found.
+ */
+export class DeviceNotFoundError extends CustomError {
   /**
-   * Check if an error code indicates a parameter problem
-   * @param {number} code - Error code to check
-   * @returns {boolean} True if parameter error
+   * Creates an instance of DeviceNotFoundError.
+   * @param {string} identifier - The name or MAC address of the device that was not found.
    */
-  static isParameterError(code) {
-    return (
-      EcowittErrorClassifier.ErrorCodeMap[code] === EcowittErrorClassifier.ErrorTypes.PARAMETER
-    );
-  }
-
-  /**
-   * Check if an error code indicates a device problem
-   * @param {number} code - Error code to check
-   * @returns {boolean} True if device error
-   */
-  static isDeviceError(code) {
-    return EcowittErrorClassifier.ErrorCodeMap[code] === EcowittErrorClassifier.ErrorTypes.DEVICE;
-  }
-
-  /**
-   * Check if an error code indicates the system is busy
-   * @param {number} code - Error code to check
-   * @returns {boolean} True if system busy error
-   */
-  static isSystemBusyError(code) {
-    return code === -1;
-  }
-
-  /**
-   * Check if an error is retryable (system busy, server errors)
-   * @param {number} code - Error code to check
-   * @returns {boolean} True if error might be resolved by retrying
-   */
-  static isRetryableError(code) {
-    return (
-      EcowittErrorClassifier.isSystemBusyError(code) || (code >= 500 && code < 600) || code === 429 // Rate limiting
-    );
-  }
-
-  /**
-   * Get a human-readable description for an error code
-   * @param {number} code - Error code
-   * @returns {string} Human-readable error description
-   */
-  static getErrorDescription(code) {
-    return EcowittErrorClassifier.ErrorMessages[code] || `Unknown error code: ${code}`;
-  }
-
-  /**
-   * Create a standardized error response
-   * @param {number} code - Error code
-   * @param {string} message - Error message
-   * @param {Object} additionalInfo - Additional error context
-   * @returns {Object} Standardized error response
-   */
-  static createErrorResponse(code, message, additionalInfo = {}) {
-    const classification = EcowittErrorClassifier.classifyError(code, message);
-
-    return {
-      success: false,
-      error: {
-        ...classification,
-        retryable: EcowittErrorClassifier.isRetryableError(code),
-        ...additionalInfo,
-      },
-    };
+  constructor(identifier) {
+    super(`Device "${identifier}" not found.`, "DEVICE_NOT_FOUND", "device_error");
+    this.name = "DeviceNotFoundError";
+    this.identifier = identifier;
   }
 }

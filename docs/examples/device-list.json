@@ -1,0 +1,50 @@
+{
+  "code": 0,
+  "msg": "success",
+  "time": "1646736220",
+  "data": {
+    "total": 2,
+    "totalPage": 1,
+    "pageNum": 1,
+    "list": [
+      {
+        "id": 1050,
+        "name": "ceshi",
+        "mac": "25:25:25:25:25:25",
+        "type": 1,
+        "date_zone_id": "Australia/Melbourne",
+        "createtime": 1642561960,
+        "longitude": -103.6555285,
+        "latitude": 38.4904938,
+        "stationtype": "EasyWeatherV1.6.1",
+        "iotdevice_list": [
+          {
+            "name": "xxxxxxxxxxx",
+            "default_title": "AC1100-0xxxxxx1",
+            "device_id": "ShKdxxxxxxxxxxxxsOGP",
+            "version": "xxx",
+            "createtime": 1705038104
+          },
+          {
+            "name": "xxxxxxxxxxx",
+            "default_title": "WFC01-0xxxxxx8",
+            "device_id": "IWFm************dGE9",
+            "version": "xxx",
+            "createtime": 1705038104
+          }
+        ]
+      },
+      {
+        "id": 944,
+        "name": "test1",
+        "imei": "863879049793071",
+        "type": 1,
+        "date_zone_id": "Asia/Shanghai",
+        "createtime": 1636684950,
+        "longitude": 113.9147,
+        "latitude": 22.574,
+        "stationtype": "WS6006_V1.1.26"
+      }
+    ]
+  }
+}
