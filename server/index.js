@@ -53,14 +53,27 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
       description: "Access Ecowitt weather station device information.",
       mimeType: "application/json",
     },
-    async (uri, { mac }) => ({
-      contents: [
-        {
-          uri: uri.href,
-          text: `Test content ${mac}`,
-        },
-      ],
-    })
+    async (uri, { mac }) => {
+      try {
+        // Reformat MAC address by injecting colons
+        const formattedMac = mac.replace(/(.{2})/g, "$1:").slice(0, -1);
+        const deviceData = await deviceHandlers.getDeviceByMac(formattedMac);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mac: formattedMac,
+              title: deviceData.name,
+              text: JSON.stringify(deviceData, null, 2),
+              contentType: "application/json",
+            },
+          ],
+        };
+      } catch (error) {
+        return toMcpErrorResponse(error);
+      }
+    }
   );
 
   return server;

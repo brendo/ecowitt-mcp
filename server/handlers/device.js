@@ -32,7 +32,6 @@ export class DeviceHandlers {
     return rawDevices.map((device) => ({
       uri: `ecowitt://device/${device.mac.replace(/:/g, "")}`,
       name: device.name,
-      title: device.name,
       description: `Ecowitt weather station: ${device.stationType || "Unknown Type"}`,
       mac: device.mac, // Keep raw MAC for internal use like getDeviceByName
     }));
