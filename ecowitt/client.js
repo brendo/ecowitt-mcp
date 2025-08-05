@@ -216,27 +216,49 @@ export class EcowittClient {
    */
   async getDeviceInfo(macOrImei) {
     const params = this._buildDeviceParams(macOrImei);
-    const data = await this._makeRequest("/device/info", { params });
-    // 'data' here is the entire 'data' payload of device/info response
-    return data;
+
+    return this._makeRequest("/device/info", { params });
   }
 
   /**
    * Get real-time information for a specific device by MAC or IMEI.
    * @param {string} macOrImei - Device MAC or IMEI.
-   * @param {string} [callBack] - Comma-separated list of field types to return (e.g., "all", "outdoor", "indoor.humidity").
+   * @param {string} [callback] - Comma-separated list of field types to return (e.g., "all", "outdoor", "indoor.humidity").
    * @param {Object} [unitOptions] - Optional unit conversion parameters (temp_unitid, pressure_unitid, etc.).
    * @returns {Promise<Object>} Raw real-time device information.
    * @throws {EcowittApiError|CustomError|DataParsingError} On various errors.
    */
-  async getRealTimeInfo(macOrImei, callBack, unitOptions = {}) {
+  async getRealTimeInfo(macOrImei, callback, unitOptions = {}) {
     const params = {
       ...this._buildDeviceParams(macOrImei),
-      ...(callBack && { call_back: callBack }),
+      ...(callback && { call_back: callback }),
       ...unitOptions,
     };
-    const data = await this._makeRequest("/device/real_time", { params });
-    // 'data' here is the entire 'data' payload of device/real_time response
-    return data;
+
+    return this._makeRequest("/device/real_time", { params });
+  }
+
+  /**
+   * Get historical data for a specific device by MAC or IMEI.
+   * @param {string} macOrImei - Device MAC or IMEI.
+   * @param {string} startDate - Start time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
+   * @param {string} endDate - End time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
+   * @param {string} callback - Comma-separated list of field types to return.
+   * @param {string} cycleType - Data resolution ("auto", "5min", "30min", "4hour", "1day").
+   * @param {Object} [unitOptions] - Optional unit parameters.
+   * @returns {Promise<Object>} Historical device data.
+   * @throws {EcowittApiError|CustomError|DataParsingError} On various errors.
+   */
+  async getDeviceHistory(macOrImei, startDate, endDate, callback, cycleType, unitOptions = {}) {
+    const params = {
+      ...this._buildDeviceParams(macOrImei),
+      ...(startDate && { start_date: startDate }),
+      ...(endDate && { end_date: endDate }),
+      ...(callback && { call_back: callback }),
+      ...(cycleType && { cycle_type: cycleType }),
+      ...unitOptions,
+    };
+
+    return this._makeRequest("/device/history", { params });
   }
 }

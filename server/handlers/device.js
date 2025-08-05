@@ -71,12 +71,12 @@ export class DeviceHandlers {
   /**
    * Get real-time information for a specific device by MAC address.
    * @param {string} macAddress - Device MAC address.
-   * @param {string} [callBack] - Comma-separated list of field types to return.
+   * @param {string} [callback] - Comma-separated list of field types to return.
    * @param {Object} [unitOptions] - Optional unit conversion parameters.
    * @returns {Promise<Object>} Raw real-time device information.
    * @throws {CustomError|EcowittApiError|HandlerError} If device not found, invalid parameter, API call fails, or an unexpected error occurs.
    */
-  async getDeviceRealTimeInfo(macAddress, callBack, unitOptions = {}) {
+  async getDeviceRealTimeInfo(macAddress, callback, unitOptions = {}) {
     try {
       validateRequired("MAC address", macAddress);
     } catch (error) {
@@ -84,13 +84,43 @@ export class DeviceHandlers {
     }
 
     try {
-      const realTimeData = await this.client.getRealTimeInfo(macAddress, callBack, unitOptions);
-      return realTimeData;
+      return await this.client.getRealTimeInfo(macAddress, callback, unitOptions);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
       throw new HandlerError(`An unexpected error occurred in getDeviceRealTimeInfo: ${error.message}`, error);
+    }
+  }
+
+  /**
+   * Get historical data for a specific device by MAC address.
+   * @param {string} macAddress - Device MAC address.
+   * @param {string} start_date - Start time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
+   * @param {string} end_date - End time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
+   * @param {string} callback - Comma-separated list of field types to return.
+   * @param {string} [cycle_type] - Data resolution ("auto", "5min", "30min", "4hour", "1day").
+   * @param {Object} [unitOptions] - Optional unit parameters.
+   * @returns {Promise<Object>} Historical device data.
+   * @throws {CustomError|EcowittApiError|HandlerError} On error.
+   */
+  async getDeviceHistory(macAddress, startDate, endDate, callback, cycleType, unitOptions = {}) {
+    try {
+      validateRequired("MAC address", macAddress);
+      validateRequired("start date", startDate);
+      validateRequired("end date", endDate);
+      validateRequired("callback", callback);
+    } catch (error) {
+      throw new CustomError(error.message, "INVALID_PARAMETER", "parameter_error");
+    }
+
+    try {
+      return await this.client.getDeviceHistory(macAddress, startDate, endDate, callback, cycleType, unitOptions);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new HandlerError(`An unexpected error occurred in getDeviceHistory: ${error.message}`, error);
     }
   }
 
@@ -117,7 +147,7 @@ export class DeviceHandlers {
         throw new DeviceNotFoundError(deviceName);
       }
 
-      return this.getDeviceByMac(resource.mac);
+      return await this.getDeviceByMac(resource.mac);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

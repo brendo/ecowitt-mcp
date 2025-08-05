@@ -234,6 +234,110 @@ describe("EcowittClient", () => {
     });
   });
 
+  describe("getDeviceHistory", () => {
+    const mockHistoryApiResponse = {
+      code: 0,
+      msg: "success",
+      time: "1647993600",
+      data: {
+        outdoor: {
+          temperature: {
+            unit: "C",
+            list: {
+              1647993600: 12.3,
+              1648008000: 12.7,
+            },
+          },
+          humidity: {
+            unit: "%",
+            list: {
+              1647993600: 56,
+              1648008000: 57,
+            },
+          },
+        },
+      },
+    };
+
+    it("should successfully fetch history by MAC", async () => {
+      fetch.once(JSON.stringify(mockHistoryApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const result = await client.getDeviceHistory(
+        "AA:BB:CC:DD:EE:FF",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temp",
+        "auto"
+      );
+      expect(result).toEqual(mockHistoryApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "history?application_key=test-app-key&api_key=test-api-key&mac=AA%3ABB%3ACC%3ADD%3AEE%3AFF&start_date=2023-03-15+00%3A00%3A00&end_date=2023-03-15+23%3A59%3A59&call_back=outdoor.temp&cycle_type=auto"
+        ),
+        expect.any(Object)
+      );
+    });
+
+    it("should successfully fetch history by IMEI", async () => {
+      fetch.once(JSON.stringify(mockHistoryApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const result = await client.getDeviceHistory(
+        "123456789012345",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temp"
+      );
+      expect(result).toEqual(mockHistoryApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("history?application_key=test-app-key&api_key=test-api-key&imei=123456789012345"),
+        expect.any(Object)
+      );
+    });
+
+    it("should include all unit options and cycle_type", async () => {
+      fetch.once(JSON.stringify(mockHistoryApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const unitOptions = {
+        temp_unitid: 1,
+        pressure_unitid: 3,
+        wind_speed_unitid: 6,
+        rainfall_unitid: 12,
+        solar_irradiance_unitid: 14,
+        capacity_unitid: 24,
+      };
+      await client.getDeviceHistory(
+        "AA:BB:CC:DD:EE:FF",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temp",
+        "5min",
+        unitOptions
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "temp_unitid=1&pressure_unitid=3&wind_speed_unitid=6&rainfall_unitid=12&solar_irradiance_unitid=14&capacity_unitid=24"
+        ),
+        expect.any(Object)
+      );
+    });
+
+    it("should throw CustomError for missing required parameters", async () => {
+      const client = new EcowittClient(mockConfig);
+      await expect(
+        client.getDeviceHistory(undefined, "2023-03-15 00:00:00", "2023-03-15 23:59:59", "outdoor.temp")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        client.getDeviceHistory("AA:BB:CC:DD:EE:FF", undefined, "2023-03-15 23:59:59", "outdoor.temp")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        client.getDeviceHistory("AA:BB:CC:DD:EE:FF", "2023-03-15 00:00:00", undefined, "outdoor.temp")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        client.getDeviceHistory("AA:BB:CC:DD:EE:FF", "2023-03-15 00:00:00", "2023-03-15 23:59:59", undefined)
+      ).rejects.toThrow(CustomError);
+    });
+  });
+
   describe("URL construction", () => {
     it("should build the correct URL with authentication parameters", () => {
       const client = new EcowittClient(mockConfig);

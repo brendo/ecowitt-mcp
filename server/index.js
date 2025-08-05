@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { config } from "../config/index.js";
 import { formatMacAddress } from "../utils/mac.js";
+import { extractUnitOptions, UnitOptionsSchema } from "../utils/unit_options.js";
 import { DeviceHandlers } from "./handlers/device.js";
 import { toMcpErrorResponse } from "./utils/mcp_error_handler.js";
 
@@ -117,57 +118,72 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
           .string()
           .optional()
           .describe("Optional field types to return (e.g., 'all', 'outdoor', 'indoor.humidity')"),
-        temp_unitid: z
-          .number()
-          .int()
-          .min(1)
-          .max(2)
-          .optional()
-          .describe("Temperature unit: 1 for °C, 2 for °F (default)"),
-        pressure_unitid: z
-          .number()
-          .int()
-          .min(3)
-          .max(5)
-          .optional()
-          .describe("Pressure unit: 3 for hPa, 4 for inHg (default), 5 for mmHg"),
-        wind_speed_unitid: z
-          .number()
-          .int()
-          .min(6)
-          .max(11)
-          .optional()
-          .describe("Wind speed unit: 6 for m/s, 7 for km/h, 8 for knots, 9 for mph (default), 10 for BFT, 11 for fpm"),
-        rainfall_unitid: z
-          .number()
-          .int()
-          .min(12)
-          .max(13)
-          .optional()
-          .describe("Rain unit: 12 for mm, 13 for in (default)"),
-        solar_irradiance_unitid: z
-          .number()
-          .int()
-          .min(14)
-          .max(16)
-          .optional()
-          .describe("Solar Irradiance unit: 14 for lux, 15 for fc, 16 for W/m² (default)"),
-        capacity_unitid: z
-          .number()
-          .int()
-          .min(24)
-          .max(26)
-          .optional()
-          .describe("Capacity unit: 24 for L (default), 25 for m³, 26 for gal"),
+        ...UnitOptionsSchema,
       },
     },
     async (args) => {
-      const { mac, callback, ...unitOptions } = args;
+      const { mac, callback, ...rest } = args;
       const formattedMac = formatMacAddress(mac);
+      const unitOptions = extractUnitOptions(rest);
       const realtimeData = await deviceHandlers.getDeviceRealTimeInfo(formattedMac, callback, unitOptions);
 
       return {
         content: [{ type: "text", text: JSON.stringify(realtimeData, null, 2), contentType: "application/json" }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_device_historical_info",
+    {
+      name: "get_device_historical_info",
+      description: "Get historical data from an Ecowitt weather station device",
+      inputSchema: {
+        mac: z.string().describe("Device MAC address (format: AA:BB:CC:DD:EE:FF or AABBCCDDEEFF)"),
+        start_date: z.string().describe("Start time of data query (ISO8601: 'YYYY-MM-DD HH:mm:ss')"),
+        end_date: z.string().describe("End time of data query (ISO8601: 'YYYY-MM-DD HH:mm:ss')"),
+        call_back: z
+          .string()
+          .describe("Comma-separated list of field types to return (e.g., 'outdoor.temp,indoor.humidity')"),
+        cycle_type: z.string().optional().describe("Data resolution: 'auto', '5min', '30min', '4hour', '1day'"),
+        ...UnitOptionsSchema,
+      },
+      outputSchema: {
+        history: z.any().describe("Historical device data (raw Ecowitt API response)"),
+      },
+    },
+    async (args) => {
+      const { mac, start_date, end_date, call_back, cycle_type, ...rest } = args;
+      const formattedMac = formatMacAddress(mac);
+      const unitOptions = extractUnitOptions(rest);
+      const historyData = await deviceHandlers.getDeviceHistory(
+        formattedMac,
+        start_date,
+        end_date,
+        call_back,
+        cycle_type,
+        unitOptions
+      );
+
+      return {
+        structuredContent: { history: historyData },
+        content: [{ type: "text", text: JSON.stringify(historyData, null, 2), contentType: "application/json" }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_current_datetime",
+    {
+      name: "get_current_datetime",
+      description: "Get the current datetime in ISO 8601 format (UTC).",
+      outputSchema: {
+        datetime: z.string().datetime().describe("Current datetime in ISO 8601 format (UTC)"),
+      },
+    },
+    async () => {
+      return {
+        structuredContent: { datetime: new Date().toISOString() },
       };
     }
   );

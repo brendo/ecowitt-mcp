@@ -188,6 +188,120 @@ describe("DeviceHandlers", () => {
     });
   });
 
+  describe("getDeviceHistory", () => {
+    const mockHistoryApiResponse = {
+      code: 0,
+      msg: "success",
+      time: "1647993600",
+      data: {
+        outdoor: {
+          temperature: {
+            unit: "C",
+            list: {
+              1647993600: 12.3,
+              1648008000: 12.7,
+            },
+          },
+          humidity: {
+            unit: "%",
+            list: {
+              1647993600: 56,
+              1648008000: 57,
+            },
+          },
+        },
+      },
+    };
+
+    it("should return history data on successful API call", async () => {
+      const mockGetDeviceHistory = vi.fn().mockResolvedValue(mockHistoryApiResponse.data);
+      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+
+      const result = await deviceHandlers.getDeviceHistory(
+        "AA:BB:CC:DD:EE:01",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temperature"
+      );
+      expect(result).toEqual(mockHistoryApiResponse.data);
+      expect(mockGetDeviceHistory).toHaveBeenCalledWith(
+        "AA:BB:CC:DD:EE:01",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temperature",
+        undefined,
+        {}
+      );
+    });
+
+    it("should include cycleType and unitOptions when provided", async () => {
+      const mockGetDeviceHistory = vi.fn().mockResolvedValue(mockHistoryApiResponse.data);
+      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      const unitOptions = { temp_unitid: 1 };
+      const cycleType = "5min";
+      await deviceHandlers.getDeviceHistory(
+        "AA:BB:CC:DD:EE:01",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temperature",
+        cycleType,
+        unitOptions
+      );
+      expect(mockGetDeviceHistory).toHaveBeenCalledWith(
+        "AA:BB:CC:DD:EE:01",
+        "2023-03-15 00:00:00",
+        "2023-03-15 23:59:59",
+        "outdoor.temperature",
+        cycleType,
+        unitOptions
+      );
+    });
+
+    it("should throw CustomError for missing required parameters", async () => {
+      await expect(
+        deviceHandlers.getDeviceHistory(undefined, "2023-03-15 00:00:00", "2023-03-15 23:59:59", "outdoor.temperature")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        deviceHandlers.getDeviceHistory("AA:BB:CC:DD:EE:01", undefined, "2023-03-15 23:59:59", "outdoor.temperature")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        deviceHandlers.getDeviceHistory("AA:BB:CC:DD:EE:01", "2023-03-15 00:00:00", undefined, "outdoor.temperature")
+      ).rejects.toThrow(CustomError);
+      await expect(
+        deviceHandlers.getDeviceHistory("AA:BB:CC:DD:EE:01", "2023-03-15 00:00:00", "2023-03-15 23:59:59", undefined)
+      ).rejects.toThrow(CustomError);
+    });
+
+    it("should propagate EcowittApiError from the client", async () => {
+      const apiError = new EcowittApiError(500);
+      const mockGetDeviceHistory = vi.fn().mockRejectedValue(apiError);
+      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+
+      await expect(
+        deviceHandlers.getDeviceHistory(
+          "AA:BB:CC:DD:EE:01",
+          "2023-03-15 00:00:00",
+          "2023-03-15 23:59:59",
+          "outdoor.temperature"
+        )
+      ).rejects.toThrow(EcowittApiError);
+    });
+
+    it("should wrap unexpected errors in a HandlerError", async () => {
+      const unexpectedError = new Error("Something weird happened");
+      const mockGetDeviceHistory = vi.fn().mockRejectedValue(unexpectedError);
+      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      await expect(
+        deviceHandlers.getDeviceHistory(
+          "AA:BB:CC:DD:EE:01",
+          "2023-03-15 00:00:00",
+          "2023-03-15 23:59:59",
+          "outdoor.temperature"
+        )
+      ).rejects.toThrow(HandlerError);
+    });
+  });
+
   describe("getDeviceByName", () => {
     it("should return full device data when found by name", async () => {
       const mockListDevices = vi.fn().mockResolvedValue(mockRawDevices);

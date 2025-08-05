@@ -8,7 +8,7 @@ MCP server requires a valid Ecowitt Application Key and API Key. Visit [Private 
 
 ## MCP Configuration
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=ecowitt&config=eyJjb21tYW5kIjoibnB4IC15IGVjb3dpdHQtbWNwIiwiZW52Ijp7IkVDT1dJVFRfQVBQTElDQVRJT05fS0VZIjoieW91cl9hcHBfa2V5IiwiRUNPV0lUVF9BUElfS0VZIjoieW91cl9hcGlfa2V5In19)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=ecowitt&config=eyJjb21tYW5kIjoibnB4IC15IGVjb3dpdHQtbWNwIiwiZW52Ijp7IkVDT1dJVFRfQVBQTElDQVRJT05fS0VZIjoieW91cl9hcHBfa2V5IiwiRUNPV0lUVF9BUElfS0VZIjoieW91cl9hcGlfa2V5In19)
 
 Or add to your MCP client configuration manually (e.g., Claude Desktop, Cursor):
 
@@ -32,6 +32,8 @@ Or add to your MCP client configuration manually (e.g., Claude Desktop, Cursor):
 
 - **get_devices** - Get all your weather stations and sensors
 - **get_device_realtime_info** - Get realtime data for a specific device
+- **get_device_historical_info** - Get historical data for a specific device
+- **get_current_datetime** - Because AI needs a little help knowing exactly when it is.
 
 ## Available Resources
 
@@ -47,5 +49,11 @@ Once configured, you can ask your AI assistant:
 > "List my Ecowitt stations"
 
 > "What is the current temperature from my Ecowitt station?"
+
+> "What was the weather like last Christmas?"
+
+> "What was the wettest month this year?"
+
+> "When should I plant garlic?"
 
 The AI will use the MCP server to fetch your device information from the Ecowitt API.
