@@ -36,6 +36,45 @@ describe("EcowittClient", () => {
     },
   };
 
+  const mockDeviceInfoApiResponse = {
+    code: 0,
+    msg: "success",
+    data: {
+      id: 1,
+      name: "Device 1",
+      mac: "AA:BB:CC:DD:EE:FF",
+      stationtype: "GW1000",
+      date_zone_id: "UTC",
+      createtime: 1678886400000,
+      longitude: 0,
+      latitude: 0,
+      iotdevice_list: [],
+    },
+  };
+
+  const mockRealTimeInfoApiResponse = {
+    code: 0,
+    msg: "success",
+    data: {
+      device_id: "WH2320_123456789012345",
+      firmware_version: "1.0.0",
+      last_upload: 1678886400,
+      tempf: 70.0,
+      humidity: 60,
+      windspeedmph: 5.5,
+      dailyrainin: 0.1,
+      solarradiation: 120.5,
+      uv: 5,
+      date: "2023-03-15",
+      time: "10:00:00",
+      temp_unit: "F",
+      wind_speed_unit: "mph",
+      rain_unit: "in",
+      solar_irradiance_unit: "W/m²",
+      capacity_unit: "L",
+    },
+  };
+
   beforeEach(() => {
     fetch.resetMocks();
   });
@@ -70,14 +109,106 @@ describe("EcowittClient", () => {
       const devices = await client.listDevices();
       expect(devices).toEqual([]);
     });
+  });
 
+  describe("getDeviceInfo", () => {
+    it("should successfully fetch device information by MAC", async () => {
+      fetch.once(JSON.stringify(mockDeviceInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const deviceInfo = await client.getDeviceInfo("AA:BB:CC:DD:EE:FF");
+      expect(deviceInfo).toEqual(mockDeviceInfoApiResponse.data);
+    });
+
+    it("should successfully fetch device information by IMEI", async () => {
+      fetch.once(JSON.stringify(mockDeviceInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const deviceInfo = await client.getDeviceInfo("123456789012345");
+      expect(deviceInfo).toEqual(mockDeviceInfoApiResponse.data);
+    });
+
+    it("should throw CustomError for missing MAC or IMEI", async () => {
+      const client = new EcowittClient(mockConfig);
+      await expect(client.getDeviceInfo(undefined)).rejects.toThrow(CustomError);
+      await expect(client.getDeviceInfo(null)).rejects.toThrow(CustomError);
+      await expect(client.getDeviceInfo("")).rejects.toThrow(CustomError);
+    });
+
+    it("should return empty data if API returns empty data object", async () => {
+      fetch.once(JSON.stringify({ code: 0, msg: "success", data: {} }));
+      const client = new EcowittClient(mockConfig);
+      const deviceInfo = await client.getDeviceInfo("AA:BB:CC:DD:EE:FF");
+      expect(deviceInfo).toEqual({});
+    });
+  });
+
+  describe("getRealTimeInfo", () => {
+    it("should successfully fetch real-time information by MAC", async () => {
+      fetch.once(JSON.stringify(mockRealTimeInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const realTimeInfo = await client.getRealTimeInfo("AA:BB:CC:DD:EE:FF");
+      expect(realTimeInfo).toEqual(mockRealTimeInfoApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "real_time?application_key=test-app-key&api_key=test-api-key&mac=AA%3ABB%3ACC%3ADD%3AEE%3AFF"
+        ),
+        expect.any(Object)
+      );
+    });
+
+    it("should successfully fetch real-time information by IMEI", async () => {
+      fetch.once(JSON.stringify(mockRealTimeInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const realTimeInfo = await client.getRealTimeInfo("123456789012345");
+      expect(realTimeInfo).toEqual(mockRealTimeInfoApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("real_time?application_key=test-app-key&api_key=test-api-key&imei=123456789012345"),
+        expect.any(Object)
+      );
+    });
+
+    it("should successfully fetch real-time information with callBack parameter", async () => {
+      fetch.once(JSON.stringify(mockRealTimeInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const realTimeInfo = await client.getRealTimeInfo("AA:BB:CC:DD:EE:FF", "all");
+      expect(realTimeInfo).toEqual(mockRealTimeInfoApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "real_time?application_key=test-app-key&api_key=test-api-key&mac=AA%3ABB%3ACC%3ADD%3AEE%3AFF&call_back=all"
+        ),
+        expect.any(Object)
+      );
+    });
+
+    it("should successfully fetch real-time information with unitOptions", async () => {
+      fetch.once(JSON.stringify(mockRealTimeInfoApiResponse));
+      const client = new EcowittClient(mockConfig);
+      const unitOptions = { temp_unitid: 1, wind_speed_unitid: 6 };
+      const realTimeInfo = await client.getRealTimeInfo("AA:BB:CC:DD:EE:FF", undefined, unitOptions);
+      expect(realTimeInfo).toEqual(mockRealTimeInfoApiResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "real_time?application_key=test-app-key&api_key=test-api-key&mac=AA%3ABB%3ACC%3ADD%3AEE%3AFF&temp_unitid=1&wind_speed_unitid=6"
+        ),
+        expect.any(Object)
+      );
+    });
+
+    it("should throw CustomError for missing MAC or IMEI", async () => {
+      const client = new EcowittClient(mockConfig);
+      await expect(client.getRealTimeInfo(undefined)).rejects.toThrow(CustomError);
+      await expect(client.getRealTimeInfo(null)).rejects.toThrow(CustomError);
+      await expect(client.getRealTimeInfo("")).rejects.toThrow(CustomError);
+    });
+  });
+
+  describe("_makeRequest", () => {
     it("should throw EcowittApiError for an API error response", async () => {
       const errorResponse = loadFixture("ecowitt", "device-list-error");
       fetch.mockResponse(JSON.stringify(errorResponse));
 
       const client = new EcowittClient(mockConfig);
-      await expect(client.listDevices()).rejects.toThrow(EcowittApiError);
-      await expect(client.listDevices()).rejects.toThrow("Illegal Application_Key Parameter");
+      await expect(client._makeRequest("/test/error")).rejects.toThrow(EcowittApiError);
+      await expect(client._makeRequest("/test/error")).rejects.toThrow("Illegal Application_Key Parameter");
     });
 
     it("should throw EcowittApiError for an HTTP error response", async () => {
@@ -87,26 +218,25 @@ describe("EcowittClient", () => {
         body: "{}",
       });
       const client = new EcowittClient(mockConfig);
-      await expect(client.listDevices()).rejects.toThrow(EcowittApiError);
+      await expect(client._makeRequest("/test/error")).rejects.toThrow(EcowittApiError);
     });
 
     it("should throw CustomError for network errors", async () => {
       fetch.mockRejectOnce(new Error("Network connection failed"));
       const client = new EcowittClient(mockConfig);
-      await expect(client.listDevices()).rejects.toThrow(CustomError);
+      await expect(client._makeRequest("/test/error")).rejects.toThrow(CustomError);
     });
 
     it("should throw DataParsingError for malformed JSON responses", async () => {
       fetch.once("this is not json");
       const client = new EcowittClient(mockConfig);
-      await expect(client.listDevices()).rejects.toThrow(DataParsingError);
+      await expect(client._makeRequest("/test/error")).rejects.toThrow(DataParsingError);
     });
   });
 
   describe("URL construction", () => {
     it("should build the correct URL with authentication parameters", () => {
       const client = new EcowittClient(mockConfig);
-      // @ts-ignore - accessing private method for testing
       const url = client._buildUrl("/test/endpoint");
       expect(url).toBe(
         "https://api.ecowitt.net/api/v3/test/endpoint?application_key=test-app-key&api_key=test-api-key"
@@ -124,7 +254,6 @@ describe("EcowittClient", () => {
         date_zone_id: "UTC",
         stationtype: "GW1000",
       };
-      // @ts-ignore - accessing private method for testing
       const transformed = client._transformDevice(rawDevice);
       expect(transformed.id).toBe(99);
       expect(transformed.name).toBe("Raw Device");

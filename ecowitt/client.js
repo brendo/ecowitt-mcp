@@ -157,6 +157,20 @@ export class EcowittClient {
   }
 
   /**
+   * Helper to build device identification parameters (mac or imei).
+   * @private
+   * @param {string} macOrImei - Device MAC or IMEI.
+   * @returns {Object} Parameters object with either 'mac' or 'imei' key.
+   * @throws {CustomError} If macOrImei is not provided.
+   */
+  _buildDeviceParams(macOrImei) {
+    if (!macOrImei) {
+      throw new CustomError("MAC or IMEI is required.", "INVALID_PARAMETER", "parameter_error");
+    }
+    return macOrImei.includes(":") ? { mac: macOrImei } : { imei: macOrImei };
+  }
+
+  /**
    * Transform raw device data from API to normalized format
    * @private
    * @param {Object} rawDevice - Raw device data from API
@@ -201,12 +215,28 @@ export class EcowittClient {
    * @throws {EcowittApiError|CustomError|DataParsingError} On various errors.
    */
   async getDeviceInfo(macOrImei) {
-    if (!macOrImei) {
-      throw new CustomError("MAC or IMEI is required for device info.", "INVALID_PARAMETER", "parameter_error");
-    }
-    const params = macOrImei.includes(":") ? { mac: macOrImei } : { imei: macOrImei };
+    const params = this._buildDeviceParams(macOrImei);
     const data = await this._makeRequest("/device/info", { params });
     // 'data' here is the entire 'data' payload of device/info response
+    return data;
+  }
+
+  /**
+   * Get real-time information for a specific device by MAC or IMEI.
+   * @param {string} macOrImei - Device MAC or IMEI.
+   * @param {string} [callBack] - Comma-separated list of field types to return (e.g., "all", "outdoor", "indoor.humidity").
+   * @param {Object} [unitOptions] - Optional unit conversion parameters (temp_unitid, pressure_unitid, etc.).
+   * @returns {Promise<Object>} Raw real-time device information.
+   * @throws {EcowittApiError|CustomError|DataParsingError} On various errors.
+   */
+  async getRealTimeInfo(macOrImei, callBack, unitOptions = {}) {
+    const params = {
+      ...this._buildDeviceParams(macOrImei),
+      ...(callBack && { call_back: callBack }),
+      ...unitOptions,
+    };
+    const data = await this._makeRequest("/device/real_time", { params });
+    // 'data' here is the entire 'data' payload of device/real_time response
     return data;
   }
 }

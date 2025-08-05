@@ -32,8 +32,12 @@ export class DeviceHandlers {
     return rawDevices.map((device) => ({
       uri: `ecowitt://device/${device.mac.replace(/:/g, "")}`,
       name: device.name,
-      description: `Ecowitt weather station: ${device.stationType || "Unknown Type"}`,
-      mac: device.mac, // Keep raw MAC for internal use like getDeviceByName
+      mac: device.mac,
+      type: device.type,
+      stationType: device.stationType,
+      dateZoneId: device.dateZoneId,
+      longitude: device.longitude,
+      latitude: device.latitude,
     }));
   }
 
@@ -61,6 +65,32 @@ export class DeviceHandlers {
         throw error;
       }
       throw new HandlerError(`An unexpected error occurred in getDeviceByMac: ${error.message}`, error);
+    }
+  }
+
+  /**
+   * Get real-time information for a specific device by MAC address.
+   * @param {string} macAddress - Device MAC address.
+   * @param {string} [callBack] - Comma-separated list of field types to return.
+   * @param {Object} [unitOptions] - Optional unit conversion parameters.
+   * @returns {Promise<Object>} Raw real-time device information.
+   * @throws {CustomError|EcowittApiError|HandlerError} If device not found, invalid parameter, API call fails, or an unexpected error occurs.
+   */
+  async getDeviceRealTimeInfo(macAddress, callBack, unitOptions = {}) {
+    try {
+      validateRequired("MAC address", macAddress);
+    } catch (error) {
+      throw new CustomError(error.message, "INVALID_PARAMETER", "parameter_error");
+    }
+
+    try {
+      const realTimeData = await this.client.getRealTimeInfo(macAddress, callBack, unitOptions);
+      return realTimeData;
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new HandlerError(`An unexpected error occurred in getDeviceRealTimeInfo: ${error.message}`, error);
     }
   }
 
