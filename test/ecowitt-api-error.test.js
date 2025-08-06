@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EcowittApiError } from "../ecowitt/errors.js";
+import { EcowittApiError } from "../src/ecowitt/errors.js";
 
 describe("EcowittApiError", () => {
   describe("Constructor and Properties", () => {

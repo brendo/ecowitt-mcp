@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactMacAddress, formatMacAddress, isValidMacAddress } from "../utils/mac.js";
+import { compactMacAddress, formatMacAddress, isValidMacAddress } from "../src/utils/mac.js";
 
 describe("MAC address utilities", () => {
   describe("formatMacAddress", () => {

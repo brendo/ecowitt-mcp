@@ -1,15 +1,5 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { CustomError, DataParsingError } from "../utils/errors.js";
 import { EcowittApiError } from "./errors.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Get package.json for version info
-const packageJsonPath = join(__dirname, "..", "package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
 /**
  * Ecowitt API client for interacting with weather station data
@@ -18,14 +8,16 @@ export class EcowittClient {
   /**
    * Create a new EcowittClient instance
    * @param {Object} config - Configuration object
-   * @param {string} config.applicationKey - Ecowitt application key
-   * @param {string} config.apiKey - Ecowitt API key
-   * @param {string} config.baseUrl - Base URL for the Ecowitt API
-   * @param {number} config.requestTimeout - Request timeout in milliseconds
+   * @param {Object} config.ecowitt - Ecowitt API configuration
+   * @param {string} config.ecowitt.applicationKey - Ecowitt application key
+   * @param {string} config.ecowitt.apiKey - Ecowitt API key
+   * @param {string} config.ecowitt.baseUrl - Base URL for the Ecowitt API
+   * @param {number} config.ecowitt.requestTimeout - Request timeout in milliseconds
+   * @param {Object} config.server - Server configuration
+   * @param {string} config.server.version - Server version
    */
   constructor(config) {
-    this._validateConfig(config);
-    this.config = { ...config };
+    this.config = { ...this._validateConfig(config) };
   }
 
   /**
@@ -33,24 +25,38 @@ export class EcowittClient {
    * @private
    * @param {Object} config - Configuration to validate
    * @throws {Error} If configuration is invalid
+   * @returns {Object} Validated configuration object
    */
   _validateConfig(config) {
-    if (!config.applicationKey) {
+    if (!config.ecowitt.applicationKey) {
       throw new CustomError("Application key is required", "MISSING_CONFIG", "configuration_error");
     }
-    if (!config.apiKey) {
+    if (!config.ecowitt.apiKey) {
       throw new CustomError("API key is required", "MISSING_CONFIG", "configuration_error");
     }
-    if (!config.baseUrl) {
+    if (!config.ecowitt.baseUrl) {
       throw new CustomError("Base URL is required", "MISSING_CONFIG", "configuration_error");
     }
 
     // Validate base URL format
     try {
-      new URL(config.baseUrl);
+      new URL(config.ecowitt.baseUrl);
     } catch (error) {
       throw new CustomError("Invalid base URL format", "INVALID_CONFIG", "configuration_error", error);
     }
+
+    // Handle base URL with path correctly - normalize by removing trailing slash
+    const normalizedBaseUrl = config.ecowitt.baseUrl.endsWith("/")
+      ? config.ecowitt.baseUrl.slice(0, -1)
+      : config.ecowitt.baseUrl;
+
+    return {
+      applicationKey: config.ecowitt.applicationKey,
+      apiKey: config.ecowitt.apiKey,
+      baseUrl: normalizedBaseUrl,
+      requestTimeout: config.ecowitt.requestTimeout,
+      version: config.server?.version,
+    };
   }
 
   /**
@@ -64,10 +70,7 @@ export class EcowittClient {
     // Ensure endpoint starts with /
     const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 
-    // Handle base URL with path correctly
-    const baseUrl = this.config.baseUrl.endsWith("/") ? this.config.baseUrl.slice(0, -1) : this.config.baseUrl;
-
-    const url = new URL(`${baseUrl}${normalizedEndpoint}`);
+    const url = new URL(`${this.config.baseUrl}${normalizedEndpoint}`);
 
     // Add authentication parameters
     url.searchParams.set("application_key", this.config.applicationKey);
@@ -97,14 +100,14 @@ export class EcowittClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-    }, this.config.requestTimeout || 10000);
+    }, this.config.requestTimeout);
 
     try {
       const response = await fetch(url, {
-        method: options.method || "GET",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": `ecowitt-mcp/${packageJson.version}`,
+          "User-Agent": `ecowitt-mcp/${this.config.version}`,
           ...options.headers,
         },
         signal: controller.signal,
@@ -244,7 +247,7 @@ export class EcowittClient {
    * @param {string} startDate - Start time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
    * @param {string} endDate - End time of data query (ISO8601: "YYYY-MM-DD HH:mm:ss").
    * @param {string} callback - Comma-separated list of field types to return.
-   * @param {string} cycleType - Data resolution ("auto", "5min", "30min", "4hour", "1day").
+   * @param {string} [cycleType] - Data resolution ("auto", "5min", "30min", "4hour", "1day").
    * @param {Object} [unitOptions] - Optional unit parameters.
    * @returns {Promise<Object>} Historical device data.
    * @throws {EcowittApiError|CustomError|DataParsingError} On various errors.

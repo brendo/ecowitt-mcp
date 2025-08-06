@@ -1,4 +1,3 @@
-import { EcowittClient } from "../../ecowitt/client.js";
 import { DeviceNotFoundError } from "../../ecowitt/errors.js";
 import { CustomError, HandlerError } from "../../utils/errors.js";
 import { validateRequired } from "../../utils/validation.js";
@@ -9,14 +8,10 @@ import { validateRequired } from "../../utils/validation.js";
 export class DeviceHandlers {
   /**
    * Create a new DeviceHandlers instance
-   * @param {Object} config - Configuration object
-   * @param {string} config.applicationKey - Ecowitt application key
-   * @param {string} config.apiKey - Ecowitt API key
-   * @param {string} config.baseUrl - Base URL for the Ecowitt API
-   * @param {number} [config.requestTimeout] - Request timeout in milliseconds
+   * @param {EcowittClient} client - Configured Ecowitt API client instance
    */
-  constructor(config) {
-    this.client = new EcowittClient(config);
+  constructor(client) {
+    this.client = client;
   }
 
   /**

@@ -1,6 +1,6 @@
 # Ecowitt MCP Server
 
-MCP server for integrating Ecowitt weather stations with AI assistants.
+MCP server for integrating Ecowitt weather stations with AI assistants. This fetches weather data using the [Ecowitt API](https://doc.ecowitt.net/web/#/apiv3en).
 
 ## Prerequisites
 

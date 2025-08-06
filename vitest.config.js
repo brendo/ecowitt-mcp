@@ -9,21 +9,21 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      exclude: ["node_modules/**", "test/**", "vitest.config.js", "biome.json", "**/*.test.js"],
+    // We can't use `--env-file` to load environment variables in Vitest so manually
+    // specify them here.
+    env: {
+      ECOWITT_APPLICATION_KEY: "test-app-key",
+      ECOWITT_API_KEY: "test-api-key",
+      ECOWITT_BASE_URL: "https://api.ecowitt.net/api/v3",
+      REQUEST_TIMEOUT: "1000",
     },
-    setupFiles: ["./test/setup.js"],
-    testTimeout: 10000,
-    hookTimeout: 10000,
     provide: {
       APP_VERSION: packageJson.version,
     },
   },
   resolve: {
     alias: {
-      "@": new URL("./", import.meta.url).pathname,
+      "@": new URL("./src", import.meta.url).pathname,
     },
   },
 });

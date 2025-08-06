@@ -4,6 +4,7 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { config } from "../config/index.js";
+import { EcowittClient } from "../ecowitt/client.js";
 import { formatMacAddress } from "../utils/mac.js";
 import { extractUnitOptions, UnitOptionsSchema } from "../utils/unit_options.js";
 import { DeviceHandlers } from "./handlers/device.js";
@@ -11,10 +12,18 @@ import { toMcpErrorResponse } from "./utils/mcp_error_handler.js";
 
 /**
  * Create and configure the MCP server
- * @param {Object} ecowittConfig - Ecowitt API configuration
+ * @param {Object} config - Full configuration object
+ * @param {Object} config.ecowitt - Ecowitt API configuration
+ * @param {string} config.ecowitt.applicationKey - Ecowitt application key
+ * @param {string} config.ecowitt.apiKey - Ecowitt API key
+ * @param {string} config.ecowitt.baseUrl - Base URL for the Ecowitt API
+ * @param {Object} config.server - Server configuration
+ * @param {string} config.server.name - Server name
+ * @param {string} config.server.version - Server version
+ * @param {number} config.server.requestTimeout - Request timeout in milliseconds
  * @returns {Promise<McpServer>} Configured MCP server instance
  */
-export async function createMCPServer(ecowittConfig = config.ecowitt) {
+export async function createMCPServer(config) {
   // Create the MCP server and advertise capabilities for resources
   const server = new McpServer(
     {
@@ -33,7 +42,8 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
   );
 
   // Create device handlers
-  const deviceHandlers = new DeviceHandlers(ecowittConfig);
+  const ecowittClient = new EcowittClient(config);
+  const deviceHandlers = new DeviceHandlers(ecowittClient);
 
   // Register the standard 'resources' primitive
   server.registerResource(
@@ -192,14 +202,16 @@ export async function createMCPServer(ecowittConfig = config.ecowitt) {
 }
 
 /**
- * Main entry point
+ * Main entry point for the Ecowitt MCP server.
+ * Initializes the server with the configuration and starts listening on stdio transport.
+ * @throws {Error} If server initialization fails
  */
 async function main() {
   try {
-    // Create the server
-    const server = await createMCPServer();
+    // Create and configure the MCP server instance
+    const server = await createMCPServer(config);
 
-    // Create transport and connect
+    // Initialize stdio transport and establish connection
     const transport = new StdioServerTransport();
     await server.connect(transport);
 

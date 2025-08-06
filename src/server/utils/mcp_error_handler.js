@@ -5,8 +5,13 @@ import { CustomError, DataParsingError } from "../../utils/errors.js";
  * Centralized error handler for mapping custom errors to MCP error responses.
  * Adheres to the Single Responsibility Principle by focusing solely on error transformation.
  *
- * @param {Error} error - The error object to handle.
- * @returns {Object} An MCP-compliant error response object.
+ * @param {Error} error - The error object to handle (CustomError, EcowittApiError, DataParsingError, or generic Error)
+ * @returns {Object} An MCP-compliant error response object with the following structure:
+ *   - error.code: Error code for programmatic handling
+ *   - error.message: Human-readable error message
+ *   - error.type: Error type classification for MCP
+ *   - error.retryable: Optional boolean indicating if the error is retryable
+ *   - error.originalErrorMessage: Optional original error message when wrapping other errors
  */
 export function toMcpErrorResponse(error) {
   let mcpCode, mcpMessage, mcpType, originalErrorMessage;

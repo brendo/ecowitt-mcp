@@ -1,0 +1,23 @@
+{
+  "code": 0,
+  "msg": "success",
+  "time": "1678886400",
+  "data": {
+    "device_id": "WH2320_123456789012345",
+    "firmware_version": "1.0.0",
+    "last_upload": 1678886400,
+    "tempf": 70.0,
+    "humidity": 60,
+    "windspeedmph": 5.5,
+    "dailyrainin": 0.1,
+    "solarradiation": 120.5,
+    "uv": 5,
+    "date": "2023-03-15",
+    "time": "10:00:00",
+    "temp_unit": "F",
+    "wind_speed_unit": "mph",
+    "rain_unit": "in",
+    "solar_irradiance_unit": "W/m²",
+    "capacity_unit": "L"
+  }
+}

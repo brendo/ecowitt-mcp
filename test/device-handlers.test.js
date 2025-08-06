@@ -1,33 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EcowittClient } from "../ecowitt/client.js";
-import { DeviceNotFoundError, EcowittApiError } from "../ecowitt/errors.js";
-import { DeviceHandlers } from "../server/handlers/device.js";
-import { CustomError, HandlerError } from "../utils/errors.js";
+import { EcowittClient } from "../src/ecowitt/client.js";
+import { DeviceNotFoundError, EcowittApiError } from "../src/ecowitt/errors.js";
+import { DeviceHandlers } from "../src/server/handlers/device.js";
+import { CustomError, HandlerError } from "../src/utils/errors.js";
 
 // Mock the EcowittClient module
-vi.mock("../ecowitt/client.js");
+vi.mock("../src/ecowitt/client.js");
 
 describe("DeviceHandlers", () => {
   let deviceHandlers;
-  const mockConfig = {
-    applicationKey: "test-app-key",
-    apiKey: "test-api-key",
-    baseUrl: "https://api.ecowitt.net",
-  };
+  let mockClient;
 
   const mockRawDevices = [
     {
       id: 1,
       name: "Device 1",
       mac: "AA:BB:CC:DD:EE:01",
+      type: "gateway",
       stationType: "GW1000",
       dateZoneId: "America/New_York",
+      longitude: -74.006,
+      latitude: 40.7128,
     },
     {
       id: 2,
       name: "Backyard",
       mac: "AA:BB:CC:DD:EE:02",
+      type: "weather_station",
       stationType: "WS2900",
+      longitude: -74.007,
+      latitude: 40.7129,
     },
   ];
 
@@ -36,14 +38,20 @@ describe("DeviceHandlers", () => {
       uri: "ecowitt://device/AABBCCDDEE01",
       name: "Device 1",
       mac: "AA:BB:CC:DD:EE:01",
+      type: "gateway",
       stationType: "GW1000",
       dateZoneId: "America/New_York",
+      longitude: -74.006,
+      latitude: 40.7128,
     },
     {
       uri: "ecowitt://device/AABBCCDDEE02",
       name: "Backyard",
       mac: "AA:BB:CC:DD:EE:02",
+      type: "weather_station",
       stationType: "WS2900",
+      longitude: -74.007,
+      latitude: 40.7129,
     },
   ];
 
@@ -56,20 +64,21 @@ describe("DeviceHandlers", () => {
   beforeEach(() => {
     // Reset mocks before each test
     EcowittClient.mockClear();
-    deviceHandlers = new DeviceHandlers(mockConfig);
+    mockClient = new EcowittClient();
+    deviceHandlers = new DeviceHandlers(mockClient);
   });
 
   describe("constructor", () => {
-    it("should create an instance and instantiate EcowittClient with valid config", () => {
+    it("should create an instance with injected client", () => {
       expect(deviceHandlers).toBeInstanceOf(DeviceHandlers);
-      expect(EcowittClient).toHaveBeenCalledWith(mockConfig);
+      expect(deviceHandlers.client).toBe(mockClient);
     });
   });
 
   describe("handleDeviceList", () => {
     it("should return transformed resource list on successful API call", async () => {
       const mockListDevices = vi.fn().mockResolvedValue(mockRawDevices);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
+      mockClient.listDevices = mockListDevices;
 
       const result = await deviceHandlers.handleDeviceList();
       expect(result).toEqual(mockTransformedResources);
@@ -79,14 +88,14 @@ describe("DeviceHandlers", () => {
     it("should throw an error when the API client fails", async () => {
       const apiError = new EcowittApiError(40010);
       const mockListDevices = vi.fn().mockRejectedValue(apiError);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
+      mockClient.listDevices = mockListDevices;
 
       await expect(deviceHandlers.handleDeviceList()).rejects.toThrow(EcowittApiError);
     });
 
     it("should handle an empty device list from the client", async () => {
       const mockListDevices = vi.fn().mockResolvedValue([]);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
+      mockClient.listDevices = mockListDevices;
 
       const result = await deviceHandlers.handleDeviceList();
       expect(result).toEqual([]);
@@ -101,7 +110,7 @@ describe("DeviceHandlers", () => {
         mac: "AA:BB:CC:DD:EE:01",
       };
       const mockGetDeviceInfo = vi.fn().mockResolvedValue(mockDeviceInfo);
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
 
       const result = await deviceHandlers.getDeviceByMac("AA:BB:CC:DD:EE:01");
       expect(result).toEqual(mockDeviceInfo);
@@ -110,7 +119,7 @@ describe("DeviceHandlers", () => {
 
     it("should throw DeviceNotFoundError if client returns empty data", async () => {
       const mockGetDeviceInfo = vi.fn().mockResolvedValue({});
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
 
       await expect(deviceHandlers.getDeviceByMac("AA:BB:CC:DD:EE:01")).rejects.toThrow(DeviceNotFoundError);
     });
@@ -123,7 +132,7 @@ describe("DeviceHandlers", () => {
     it("should propagate EcowittApiError from the client", async () => {
       const apiError = new EcowittApiError(500);
       const mockGetDeviceInfo = vi.fn().mockRejectedValue(apiError);
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
 
       await expect(deviceHandlers.getDeviceByMac("AA:BB:CC:DD:EE:01")).rejects.toThrow(EcowittApiError);
     });
@@ -131,7 +140,7 @@ describe("DeviceHandlers", () => {
     it("should wrap unexpected errors in a HandlerError", async () => {
       const unexpectedError = new Error("Something weird happened");
       const mockGetDeviceInfo = vi.fn().mockRejectedValue(unexpectedError);
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
       await expect(deviceHandlers.getDeviceByMac("AA:BB:CC:DD:EE:01")).rejects.toThrow(HandlerError);
     });
   });
@@ -139,7 +148,7 @@ describe("DeviceHandlers", () => {
   describe("getDeviceRealTimeInfo", () => {
     it("should return real-time data on successful API call by MAC", async () => {
       const mockGetRealTimeInfo = vi.fn().mockResolvedValue(mockRealTimeInfo);
-      EcowittClient.mock.instances[0].getRealTimeInfo = mockGetRealTimeInfo;
+      mockClient.getRealTimeInfo = mockGetRealTimeInfo;
 
       const result = await deviceHandlers.getDeviceRealTimeInfo("AA:BB:CC:DD:EE:01");
       expect(result).toEqual(mockRealTimeInfo);
@@ -148,7 +157,7 @@ describe("DeviceHandlers", () => {
 
     it("should include callBack and unitOptions when provided", async () => {
       const mockGetRealTimeInfo = vi.fn().mockResolvedValue(mockRealTimeInfo);
-      EcowittClient.mock.instances[0].getRealTimeInfo = mockGetRealTimeInfo;
+      mockClient.getRealTimeInfo = mockGetRealTimeInfo;
 
       const callBack = "outdoor";
       const unitOptions = { temp_unitid: 1 };
@@ -159,7 +168,7 @@ describe("DeviceHandlers", () => {
 
     it("should return empty data if client returns empty data object", async () => {
       const mockGetRealTimeInfo = vi.fn().mockResolvedValue({});
-      EcowittClient.mock.instances[0].getRealTimeInfo = mockGetRealTimeInfo;
+      mockClient.getRealTimeInfo = mockGetRealTimeInfo;
 
       const result = await deviceHandlers.getDeviceRealTimeInfo("AA:BB:CC:DD:EE:01");
       expect(result).toEqual({});
@@ -174,7 +183,7 @@ describe("DeviceHandlers", () => {
     it("should propagate EcowittApiError from the client", async () => {
       const apiError = new EcowittApiError(500);
       const mockGetRealTimeInfo = vi.fn().mockRejectedValue(apiError);
-      EcowittClient.mock.instances[0].getRealTimeInfo = mockGetRealTimeInfo;
+      mockClient.getRealTimeInfo = mockGetRealTimeInfo;
 
       await expect(deviceHandlers.getDeviceRealTimeInfo("AA:BB:CC:DD:EE:01")).rejects.toThrow(EcowittApiError);
     });
@@ -182,7 +191,7 @@ describe("DeviceHandlers", () => {
     it("should wrap unexpected errors in a HandlerError", async () => {
       const unexpectedError = new Error("Something unexpected happened");
       const mockGetRealTimeInfo = vi.fn().mockRejectedValue(unexpectedError);
-      EcowittClient.mock.instances[0].getRealTimeInfo = mockGetRealTimeInfo;
+      mockClient.getRealTimeInfo = mockGetRealTimeInfo;
 
       await expect(deviceHandlers.getDeviceRealTimeInfo("AA:BB:CC:DD:EE:01")).rejects.toThrow(HandlerError);
     });
@@ -215,7 +224,7 @@ describe("DeviceHandlers", () => {
 
     it("should return history data on successful API call", async () => {
       const mockGetDeviceHistory = vi.fn().mockResolvedValue(mockHistoryApiResponse.data);
-      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      mockClient.getDeviceHistory = mockGetDeviceHistory;
 
       const result = await deviceHandlers.getDeviceHistory(
         "AA:BB:CC:DD:EE:01",
@@ -236,7 +245,7 @@ describe("DeviceHandlers", () => {
 
     it("should include cycleType and unitOptions when provided", async () => {
       const mockGetDeviceHistory = vi.fn().mockResolvedValue(mockHistoryApiResponse.data);
-      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      mockClient.getDeviceHistory = mockGetDeviceHistory;
       const unitOptions = { temp_unitid: 1 };
       const cycleType = "5min";
       await deviceHandlers.getDeviceHistory(
@@ -275,7 +284,7 @@ describe("DeviceHandlers", () => {
     it("should propagate EcowittApiError from the client", async () => {
       const apiError = new EcowittApiError(500);
       const mockGetDeviceHistory = vi.fn().mockRejectedValue(apiError);
-      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      mockClient.getDeviceHistory = mockGetDeviceHistory;
 
       await expect(
         deviceHandlers.getDeviceHistory(
@@ -290,7 +299,7 @@ describe("DeviceHandlers", () => {
     it("should wrap unexpected errors in a HandlerError", async () => {
       const unexpectedError = new Error("Something weird happened");
       const mockGetDeviceHistory = vi.fn().mockRejectedValue(unexpectedError);
-      EcowittClient.mock.instances[0].getDeviceHistory = mockGetDeviceHistory;
+      mockClient.getDeviceHistory = mockGetDeviceHistory;
       await expect(
         deviceHandlers.getDeviceHistory(
           "AA:BB:CC:DD:EE:01",
@@ -307,8 +316,8 @@ describe("DeviceHandlers", () => {
       const mockListDevices = vi.fn().mockResolvedValue(mockRawDevices);
       const mockDeviceInfo = { ...mockRawDevices[1], full_details: true };
       const mockGetDeviceInfo = vi.fn().mockResolvedValue(mockDeviceInfo);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.listDevices = mockListDevices;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
 
       const result = await deviceHandlers.getDeviceByName("Backyard");
 
@@ -319,7 +328,7 @@ describe("DeviceHandlers", () => {
 
     it("should throw DeviceNotFoundError when a device is not found", async () => {
       const mockListDevices = vi.fn().mockResolvedValue(mockRawDevices);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
+      mockClient.listDevices = mockListDevices;
 
       await expect(deviceHandlers.getDeviceByName("NonExistentDevice")).rejects.toThrow(DeviceNotFoundError);
     });
@@ -328,8 +337,8 @@ describe("DeviceHandlers", () => {
       const mockListDevices = vi.fn().mockResolvedValue(mockRawDevices);
       const mockDeviceInfo = { ...mockRawDevices[1], full_details: true };
       const mockGetDeviceInfo = vi.fn().mockResolvedValue(mockDeviceInfo);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
-      EcowittClient.mock.instances[0].getDeviceInfo = mockGetDeviceInfo;
+      mockClient.listDevices = mockListDevices;
+      mockClient.getDeviceInfo = mockGetDeviceInfo;
 
       const result = await deviceHandlers.getDeviceByName("backyard");
       expect(result).toEqual(mockDeviceInfo);
@@ -343,7 +352,7 @@ describe("DeviceHandlers", () => {
     it("should propagate errors from handleDeviceList", async () => {
       const apiError = new EcowittApiError(500);
       const mockListDevices = vi.fn().mockRejectedValue(apiError);
-      EcowittClient.mock.instances[0].listDevices = mockListDevices;
+      mockClient.listDevices = mockListDevices;
 
       await expect(deviceHandlers.getDeviceByName("any name")).rejects.toThrow(EcowittApiError);
     });
