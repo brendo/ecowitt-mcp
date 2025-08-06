@@ -1,11 +1,11 @@
 {
   "name": "ecowitt-mcp",
-  "version": "0.0.1-dev",
+  "version": "1.0.0",
   "description": "MCP server for Ecowitt Weather API v3 integration",
   "type": "module",
   "main": "src/server/index.js",
   "bin": {
-    "ecowitt-mcp": "./src/server/index.js"
+    "ecowitt-mcp": "src/server/index.js"
   },
   "scripts": {
     "start": "node --env-file=.env src/server/index.js",
