@@ -151,4 +151,66 @@ describe("Configuration", () => {
       }
     });
   });
+
+  describe("Lazy Loading", () => {
+    it("should only load config when getConfig() is called", async () => {
+      const { getConfig, clearConfigCache } = await import("../src/config/index.js");
+
+      // Clear any cached config
+      clearConfigCache();
+
+      // Set up environment for this test
+      vi.stubEnv("ECOWITT_APPLICATION_KEY", "lazy-test-app-key");
+      vi.stubEnv("ECOWITT_API_KEY", "lazy-test-api-key");
+
+      // Config should load successfully when called
+      const config = getConfig();
+      expect(config.ecowitt.applicationKey).toBe("lazy-test-app-key");
+    });
+
+    it("should cache config after first load", async () => {
+      const { getConfig, clearConfigCache } = await import("../src/config/index.js");
+
+      clearConfigCache();
+      vi.stubEnv("ECOWITT_APPLICATION_KEY", "cache-test-key");
+      vi.stubEnv("ECOWITT_API_KEY", "cache-test-api");
+
+      const config1 = getConfig();
+      const config2 = getConfig();
+
+      // Should be the same object (cached)
+      expect(config1).toBe(config2);
+    });
+
+    it("should reload config after cache is cleared", async () => {
+      const { getConfig, clearConfigCache } = await import("../src/config/index.js");
+
+      clearConfigCache();
+      vi.stubEnv("ECOWITT_APPLICATION_KEY", "first-key");
+      vi.stubEnv("ECOWITT_API_KEY", "first-api");
+
+      const config1 = getConfig();
+      expect(config1.ecowitt.applicationKey).toBe("first-key");
+
+      // Change environment and clear cache
+      clearConfigCache();
+      vi.stubEnv("ECOWITT_APPLICATION_KEY", "second-key");
+      vi.stubEnv("ECOWITT_API_KEY", "second-api");
+
+      const config2 = getConfig();
+      expect(config2.ecowitt.applicationKey).toBe("second-key");
+      expect(config1).not.toBe(config2);
+    });
+
+    it("should throw validation errors only when getConfig() is called", async () => {
+      const { getConfig, clearConfigCache } = await import("../src/config/index.js");
+
+      clearConfigCache();
+      vi.stubEnv("ECOWITT_APPLICATION_KEY", ""); // Invalid
+      vi.stubEnv("ECOWITT_API_KEY", "valid-api-key");
+
+      // Should not throw during import, only when called
+      expect(() => getConfig()).toThrow("ECOWITT_APPLICATION_KEY is required");
+    });
+  });
 });

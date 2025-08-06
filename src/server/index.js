@@ -3,7 +3,7 @@
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { config } from "../config/index.js";
+import { getConfig } from "../config/index.js";
 import { EcowittClient } from "../ecowitt/client.js";
 import { formatMacAddress } from "../utils/mac.js";
 import { extractUnitOptions, UnitOptionsSchema } from "../utils/unit_options.js";
@@ -209,6 +209,7 @@ export async function createMCPServer(config) {
 async function main() {
   try {
     // Create and configure the MCP server instance
+    const config = getConfig();
     const server = await createMCPServer(config);
 
     // Initialize stdio transport and establish connection

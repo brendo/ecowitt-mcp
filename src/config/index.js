@@ -6,10 +6,6 @@ import { z } from "zod";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Get package.json for version info
-const packageJsonPath = join(__dirname, "../..", "package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-
 // Environment variables schema
 const EnvSchema = z.object({
   ECOWITT_APPLICATION_KEY: z.string().min(1, "ECOWITT_APPLICATION_KEY is required").trim(),
@@ -27,21 +23,12 @@ const EnvSchema = z.object({
     ),
 });
 
-// Validate environment variables with better error handling
-let env;
-try {
-  env = EnvSchema.parse(process.env);
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    const errorMessages = error.errors.map((err) => `${err.path.join(".")}: ${err.message}`).join("\n");
-    throw new Error(`Configuration validation failed:\n${errorMessages}`);
-  }
-  throw error;
-}
+// Cache for the loaded configuration
+let cachedConfig = null;
 
 /**
- * Application configuration object combining environment variables and package metadata
- * @type {Object}
+ * Loads and validates configuration from environment variables and package.json
+ * @returns {Object} Application configuration object
  * @property {Object} ecowitt - Ecowitt API configuration
  * @property {string} ecowitt.applicationKey - Ecowitt application key from ECOWITT_APPLICATION_KEY env var
  * @property {string} ecowitt.apiKey - Ecowitt API key from ECOWITT_API_KEY env var
@@ -51,15 +38,48 @@ try {
  * @property {string} server.name - MCP server name
  * @property {string} server.version - Server version from package.json
  */
-export const config = {
-  ecowitt: {
-    applicationKey: env.ECOWITT_APPLICATION_KEY,
-    apiKey: env.ECOWITT_API_KEY,
-    baseUrl: env.ECOWITT_BASE_URL,
-    requestTimeout: env.REQUEST_TIMEOUT,
-  },
-  server: {
-    name: "ecowitt-weather-server",
-    version: packageJson.version,
-  },
-};
+export function getConfig() {
+  // Return cached config if already loaded
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  // Validate environment variables with better error handling
+  let env;
+  try {
+    env = EnvSchema.parse(process.env);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorMessages = error.errors.map((err) => `${err.path.join(".")}: ${err.message}`).join("\n");
+      throw new Error(`Configuration validation failed:\n${errorMessages}`);
+    }
+    throw error;
+  }
+
+  // Get package.json for version info
+  const packageJsonPath = join(__dirname, "../..", "package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+
+  // Build and cache the configuration
+  cachedConfig = {
+    ecowitt: {
+      applicationKey: env.ECOWITT_APPLICATION_KEY,
+      apiKey: env.ECOWITT_API_KEY,
+      baseUrl: env.ECOWITT_BASE_URL,
+      requestTimeout: env.REQUEST_TIMEOUT,
+    },
+    server: {
+      name: "ecowitt-weather-server",
+      version: packageJson.version,
+    },
+  };
+
+  return cachedConfig;
+}
+
+/**
+ * Clears the cached configuration (useful for testing or reloading config)
+ */
+export function clearConfigCache() {
+  cachedConfig = null;
+}

@@ -4,22 +4,18 @@ MCP server for integrating Ecowitt weather stations with AI assistants. This fet
 
 ## Prerequisites
 
-MCP server requires a valid Ecowitt Application Key and API Key. Visit [Private Center in ecowitt.net](https://www.ecowitt.net/home/user) to create.
+Requires a valid Ecowitt Application Key and API Key. Visit [Private Center in ecowitt.net](https://www.ecowitt.net/home/user) to create.
 
 ## MCP Configuration
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=ecowitt&config=eyJjb21tYW5kIjoibnB4IC15IGVjb3dpdHQtbWNwIiwiZW52Ijp7IkVDT1dJVFRfQVBQTElDQVRJT05fS0VZIjoieW91cl9hcHBfa2V5IiwiRUNPV0lUVF9BUElfS0VZIjoieW91cl9hcGlfa2V5In19)
+[**Add to Cursor**](https://cursor.com/install-mcp?name=ecowitt&config=JTdCJTIyY29tbWFuZCUyMiUzQSUyMm5weCUyMC15JTIwZWNvd2l0dC1tY3AlMjIlMkMlMjJlbnYlMjIlM0ElN0IlMjJFQ09XSVRUX0FQUExJQ0FUSU9OX0tFWSUyMiUzQSUyMnlvdXJfYXBwX2tleSUyMiUyQyUyMkVDT1dJVFRfQVBJX0tFWSUyMiUzQSUyMnlvdXJfYXBpX2tleSUyMiU3RCU3RA%3D%3D)
 
 Or add to your MCP client configuration manually (e.g., Claude Desktop, Cursor):
 
 ```json
 {
   "ecowitt": {
-    "command": "npx",
-    "args": [
-      "-y",
-      "ecowitt-mcp",
-    ],
+    "command": "npx -y ecowitt-mcp",
     "env": {
       "ECOWITT_APPLICATION_KEY": "your_app_key",
       "ECOWITT_API_KEY": "your_api_key"
@@ -57,3 +53,12 @@ Once configured, you can ask your AI assistant:
 > "When should I plant garlic?"
 
 The AI will use the MCP server to fetch your device information from the Ecowitt API.
+
+### Contributing
+
+Clone `.env.example` to `.env` and fill in your Ecowitt credentials:
+
+- `ECOWITT_APPLICATION_KEY` (required) - Your Ecowitt application key
+- `ECOWITT_API_KEY` (required) - Your Ecowitt API key
+- `ECOWITT_BASE_URL` (optional) - Base URL for Ecowitt API (default: https://api.ecowitt.net/api/v3)
+- `REQUEST_TIMEOUT` (optional) - Request timeout in milliseconds (default: 10000)
