@@ -1,6 +1,6 @@
 {
   "name": "ecowitt-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for Ecowitt Weather API v3 integration",
   "type": "module",
   "main": "src/server/index.js",
