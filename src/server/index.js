@@ -250,11 +250,6 @@ async function main() {
 
     console.error("Ecowitt MCP Server started successfully");
   } catch (error) {
-    server.server.sendLoggingMessage({
-      level: "error",
-      data: error.message,
-    });
-
     console.error("Failed to start Ecowitt MCP Server:", error.message);
     process.exit(1);
   }
