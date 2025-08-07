@@ -76,7 +76,7 @@ ecowitt-mcp/
 ### Phase 1: Core Server & `resources/list` Integration (COMPLETE)
 1.  **Project Initialization & Setup**: Established project structure, installed dependencies, and configured Biome and Vitest.
 2.  **MCP Server Core**: Implemented minimal MCP server setup in `src/server/index.js`.
-3.  **Custom Error Handling**: Created a robust error hierarchy with `CustomError`, `EcowittApiError`, `DeviceNotFoundError`, etc. Implemented a centralized error handler `toMcpErrorResponse`.
+3.  **Custom Error Handling**: Created a robust error hierarchy with `CustomError`, `EcowittApiError`, `DeviceNotFoundError`, etc. Error handling is now managed by the MCP SDK's built-in error handling system.
 4.  **Ecowitt API Client**: Implemented `src/ecowitt/client.js` with a `listDevices()` method that calls the Ecowitt API and throws custom errors on failure.
 5.  **MCP `resources/list` Handler**: Implemented `src/server/handlers/device.js` to fetch raw device data and transform it into an array of MCP `Resource` objects. Integrated the handler into the main MCP server to respond to `resources/list` requests.
 
@@ -89,11 +89,11 @@ ecowitt-mcp/
 
 ### Phase 3: Implement Weather `tools` (TDD)
 1.  **Ecowitt Client Expansion**: Add methods for `real_time` and `history` endpoints to `src/ecowitt/client.js`.
-2.  **Tool Error Handling**: Create a `toMcpOperationErrorResult` utility to format tool execution errors (as opposed to protocol errors) with `isError: true`.
+2.  **Tool Error Handling**: Tool execution errors are handled by the MCP SDK's built-in error handling system, which automatically catches errors and formats them appropriately.
 3.  **Tool Handlers**: Create `src/server/handlers/weather.js` to handle the business logic for weather data requests.
 4.  **MCP Integration**:
     *   Register `realtime_weather` and `weather_history` tools in `src/server/index.js`.
-    *   Ensure the handlers use `toMcpOperationErrorResult` for API or data processing failures.
+    *   Ensure the handlers use proper error logging with `server.server.sendLoggingMessage` for API or data processing failures.
 
 ### Phase 4: Integration Testing & Documentation
 1.  **Integration Tests**: Write end-to-end tests simulating an MCP client interacting with the server.
@@ -107,4 +107,4 @@ The server uses a hierarchy of custom error classes extending a base `CustomErro
 - **`DataParsingError` (`src/utils/errors.js`)**: For issues like malformed JSON.
 - **`HandlerError` (`src/utils/errors.js`)**: For unexpected errors within handler logic.
 
-A centralized function, `toMcpErrorResponse`, located in `src/server/utils/mcp_error_handler.js`, catches these errors at the MCP boundary (`src/server/index.js`) and transforms them into compliant JSON-RPC error responses. This keeps business logic clean (throwing errors) and ensures consistent error reporting to the client. Tool execution errors will be handled separately to report failures within a successful MCP response.
+Error handling is managed by the MCP SDK's built-in system. The server uses `server.server.sendLoggingMessage` to log errors and then rethrows them, allowing the SDK to handle error formatting and response generation automatically. This keeps business logic clean (throwing errors) while ensuring consistent error reporting to the client.

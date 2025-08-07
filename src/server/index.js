@@ -8,7 +8,6 @@ import { EcowittClient } from "../ecowitt/client.js";
 import { formatMacAddress } from "../utils/mac.js";
 import { extractUnitOptions, UnitOptionsSchema } from "../utils/unit_options.js";
 import { DeviceHandlers } from "./handlers/device.js";
-import { toMcpErrorResponse } from "./utils/mcp_error_handler.js";
 
 /**
  * Create and configure the MCP server
@@ -37,6 +36,7 @@ export async function createMCPServer(config) {
           subscribe: false, // Set to true if you implement subscriptions
         },
         tools: {},
+        logging: {},
       },
     }
   );
@@ -55,8 +55,11 @@ export async function createMCPServer(config) {
 
           return { resources };
         } catch (error) {
-          // Centralized error handling for any issues during the operation
-          return toMcpErrorResponse(error);
+          server.server.sendLoggingMessage({
+            level: "error",
+            data: `Error listing devices: ${error.message}`,
+          });
+          throw error;
         }
       },
     }),
@@ -82,7 +85,12 @@ export async function createMCPServer(config) {
           ],
         };
       } catch (error) {
-        return toMcpErrorResponse(error);
+        server.server.sendLoggingMessage({
+          level: "error",
+          data: error.message,
+        });
+
+        throw error;
       }
     }
   );
@@ -109,11 +117,19 @@ export async function createMCPServer(config) {
       },
     },
     async () => {
-      const devices = await deviceHandlers.handleDeviceList();
+      try {
+        const devices = await deviceHandlers.handleDeviceList();
 
-      return {
-        structuredContent: { devices },
-      };
+        return {
+          structuredContent: { devices },
+        };
+      } catch (error) {
+        server.server.sendLoggingMessage({
+          level: "error",
+          data: `Error getting devices: ${error.message}`,
+        });
+        throw error;
+      }
     }
   );
 
@@ -132,14 +148,22 @@ export async function createMCPServer(config) {
       },
     },
     async (args) => {
-      const { mac, callback, ...rest } = args;
-      const formattedMac = formatMacAddress(mac);
-      const unitOptions = extractUnitOptions(rest);
-      const realtimeData = await deviceHandlers.getDeviceRealTimeInfo(formattedMac, callback, unitOptions);
+      try {
+        const { mac, callback, ...rest } = args;
+        const formattedMac = formatMacAddress(mac);
+        const unitOptions = extractUnitOptions(rest);
+        const realtimeData = await deviceHandlers.getDeviceRealTimeInfo(formattedMac, callback, unitOptions);
 
-      return {
-        content: [{ type: "text", text: JSON.stringify(realtimeData, null, 2), contentType: "application/json" }],
-      };
+        return {
+          content: [{ type: "text", text: JSON.stringify(realtimeData, null, 2), contentType: "application/json" }],
+        };
+      } catch (error) {
+        server.server.sendLoggingMessage({
+          level: "error",
+          data: `Error getting realtime info for device ${args.mac}: ${error.message}`,
+        });
+        throw error;
+      }
     }
   );
 
@@ -163,22 +187,30 @@ export async function createMCPServer(config) {
       },
     },
     async (args) => {
-      const { mac, start_date, end_date, call_back, cycle_type, ...rest } = args;
-      const formattedMac = formatMacAddress(mac);
-      const unitOptions = extractUnitOptions(rest);
-      const historyData = await deviceHandlers.getDeviceHistory(
-        formattedMac,
-        start_date,
-        end_date,
-        call_back,
-        cycle_type,
-        unitOptions
-      );
+      try {
+        const { mac, start_date, end_date, call_back, cycle_type, ...rest } = args;
+        const formattedMac = formatMacAddress(mac);
+        const unitOptions = extractUnitOptions(rest);
+        const historyData = await deviceHandlers.getDeviceHistory(
+          formattedMac,
+          start_date,
+          end_date,
+          call_back,
+          cycle_type,
+          unitOptions
+        );
 
-      return {
-        structuredContent: { history: historyData },
-        content: [{ type: "text", text: JSON.stringify(historyData, null, 2), contentType: "application/json" }],
-      };
+        return {
+          structuredContent: { history: historyData },
+          content: [{ type: "text", text: JSON.stringify(historyData, null, 2), contentType: "application/json" }],
+        };
+      } catch (error) {
+        server.server.sendLoggingMessage({
+          level: "error",
+          data: `Error getting historical data for device ${args.mac}: ${error.message}`,
+        });
+        throw error;
+      }
     }
   );
 
@@ -218,6 +250,11 @@ async function main() {
 
     console.error("Ecowitt MCP Server started successfully");
   } catch (error) {
+    server.server.sendLoggingMessage({
+      level: "error",
+      data: error.message,
+    });
+
     console.error("Failed to start Ecowitt MCP Server:", error.message);
     process.exit(1);
   }
