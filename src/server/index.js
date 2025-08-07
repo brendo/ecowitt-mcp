@@ -233,32 +233,17 @@ export async function createMCPServer(config) {
   return server;
 }
 
-/**
- * Main entry point for the Ecowitt MCP server.
- * Initializes the server with the configuration and starts listening on stdio transport.
- * @throws {Error} If server initialization fails
- */
-async function main() {
-  try {
-    // Create and configure the MCP server instance
-    const config = getConfig();
-    const server = await createMCPServer(config);
+try {
+  // Create and configure the MCP server instance
+  const config = getConfig();
+  const server = await createMCPServer(config);
 
-    // Initialize stdio transport and establish connection
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+  // Initialize stdio transport and establish connection
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 
-    console.error("Ecowitt MCP Server started successfully");
-  } catch (error) {
-    console.error("Failed to start Ecowitt MCP Server:", error.message);
-    process.exit(1);
-  }
-}
-
-// Run the server if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error("Unexpected error:", error);
-    process.exit(1);
-  });
+  console.error("Ecowitt MCP Server started successfully");
+} catch (error) {
+  console.error("Failed to start Ecowitt MCP Server:", error.message);
+  process.exit(1);
 }
