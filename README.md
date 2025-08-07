@@ -8,10 +8,6 @@ Requires a valid Ecowitt Application Key and API Key. Visit [Private Center in e
 
 ## MCP Configuration
 
-[**Add to Cursor**](https://cursor.com/install-mcp?name=ecowitt&config=JTdCJTIyY29tbWFuZCUyMiUzQSUyMm5weCUyMC15JTIwZWNvd2l0dC1tY3AlMjIlMkMlMjJlbnYlMjIlM0ElN0IlMjJFQ09XSVRUX0FQUExJQ0FUSU9OX0tFWSUyMiUzQSUyMnlvdXJfYXBwX2tleSUyMiUyQyUyMkVDT1dJVFRfQVBJX0tFWSUyMiUzQSUyMnlvdXJfYXBpX2tleSUyMiU3RCU3RA%3D%3D)
-
-Or add to your MCP client configuration manually (e.g., Claude Desktop, Cursor):
-
 ```json
 {
   "ecowitt": {
