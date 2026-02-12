@@ -100,7 +100,10 @@ export async function createMCPServer(config) {
     "get_devices",
     {
       name: "get_devices",
-      description: "Get information about all Ecowitt weather station devices",
+      description:
+        "List all Ecowitt weather station devices. " +
+        "Call this first to discover devices and valid MAC addresses (see `mac` field) " +
+        "to use with the other tools.",
       outputSchema: {
         devices: z.array(
           z.object({
@@ -137,13 +140,24 @@ export async function createMCPServer(config) {
     "get_device_realtime_info",
     {
       name: "get_device_realtime_info",
-      description: "Get real-time information from an Ecowitt weather station device",
+      description:
+        "Get current real-time measurements for a single Ecowitt device. " +
+        "Use the `mac` value from `get_devices`. " +
+        "If you are unsure about units, omit all unit fields to use the device defaults.",
       inputSchema: {
-        mac: z.string().describe("Device MAC address (format: AA:BB:CC:DD:EE:FF or AABBCCDDEEFF)"),
+        mac: z
+          .string()
+          .describe(
+            "Device MAC address from `get_devices` (`mac` field). " +
+              "Accepted formats: `AA:BB:CC:DD:EE:FF` or `AABBCCDDEEFF` (case-insensitive)."
+          ),
         callback: z
           .string()
           .optional()
-          .describe("Optional field types to return (e.g., 'all', 'outdoor', 'indoor.humidity')"),
+          .describe(
+            "Optional subset of data to return (e.g. 'all', 'outdoor', 'indoor.humidity'). " +
+              "If omitted, a sensible default set of fields is returned."
+          ),
         ...UnitOptionsSchema,
       },
     },
@@ -171,15 +185,36 @@ export async function createMCPServer(config) {
     "get_device_historical_info",
     {
       name: "get_device_historical_info",
-      description: "Get historical data from an Ecowitt weather station device",
+      description:
+        "Get historical measurements for a single Ecowitt device over a time range. " +
+        "Use the `mac` value from `get_devices`. " +
+        "Times must be in the device's timezone and formatted as 'YYYY-MM-DD HH:mm:ss'. " +
+        "If you are unsure about units, omit all unit fields to use the device defaults.",
       inputSchema: {
-        mac: z.string().describe("Device MAC address (format: AA:BB:CC:DD:EE:FF or AABBCCDDEEFF)"),
-        start_date: z.string().describe("Start time of data query (ISO8601: 'YYYY-MM-DD HH:mm:ss')"),
-        end_date: z.string().describe("End time of data query (ISO8601: 'YYYY-MM-DD HH:mm:ss')"),
+        mac: z
+          .string()
+          .describe(
+            "Device MAC address from `get_devices` (`mac` field). " +
+              "Accepted formats: `AA:BB:CC:DD:EE:FF` or `AABBCCDDEEFF` (case-insensitive)."
+          ),
+        start_date: z
+          .string()
+          .describe("Start time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
+        end_date: z
+          .string()
+          .describe("End time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
         call_back: z
           .string()
-          .describe("Comma-separated list of field types to return (e.g., 'outdoor.temp,indoor.humidity')"),
-        cycle_type: z.string().optional().describe("Data resolution: 'auto', '5min', '30min', '4hour', '1day'"),
+          .describe(
+            "Comma-separated list of field groups to return (e.g. 'outdoor.temp,indoor.humidity'). " +
+              "Use 'all' to return all available fields."
+          ),
+        cycle_type: z
+          .string()
+          .optional()
+          .describe(
+            "Data resolution: 'auto', '5min', '30min', '4hour', or '1day' (defaults to 'auto' if omitted)."
+          ),
         ...UnitOptionsSchema,
       },
       outputSchema: {

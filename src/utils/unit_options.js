@@ -13,36 +13,50 @@ import { z } from "zod";
  */
 
 export const UnitOptionsSchema = {
-  temp_unitid: z.number().int().min(1).max(2).optional().describe("Temperature unit: 1 for °C, 2 for °F (default)"),
+  temp_unitid: z
+    .number()
+    .int()
+    .min(1)
+    .max(2)
+    .optional()
+    .describe("Temperature unit (optional): 1 = °C, 2 = °F (default if omitted)."),
   pressure_unitid: z
     .number()
     .int()
     .min(3)
     .max(5)
     .optional()
-    .describe("Pressure unit: 3 for hPa, 4 for inHg (default), 5 for mmHg"),
+    .describe("Pressure unit (optional): 3 = hPa, 4 = inHg (default), 5 = mmHg."),
   wind_speed_unitid: z
     .number()
     .int()
     .min(6)
     .max(11)
     .optional()
-    .describe("Wind speed unit: 6 for m/s, 7 for km/h, 8 for knots, 9 for mph (default), 10 for BFT, 11 for fpm"),
-  rainfall_unitid: z.number().int().min(12).max(13).optional().describe("Rain unit: 12 for mm, 13 for in (default)"),
+    .describe(
+      "Wind speed unit (optional): 6 = m/s, 7 = km/h, 8 = knots, 9 = mph (default), 10 = BFT, 11 = fpm."
+    ),
+  rainfall_unitid: z
+    .number()
+    .int()
+    .min(12)
+    .max(13)
+    .optional()
+    .describe("Rain unit (optional): 12 = mm, 13 = in (default)."),
   solar_irradiance_unitid: z
     .number()
     .int()
     .min(14)
     .max(16)
     .optional()
-    .describe("Solar Irradiance unit: 14 for lux, 15 for fc, 16 for W/m² (default)"),
+    .describe("Solar irradiance unit (optional): 14 = lux, 15 = fc, 16 = W/m² (default)."),
   capacity_unitid: z
     .number()
     .int()
     .min(24)
     .max(26)
     .optional()
-    .describe("Capacity unit: 24 for L (default), 25 for m³, 26 for gal"),
+    .describe("Capacity unit (optional): 24 = L (default), 25 = m³, 26 = gal."),
 };
 
 /**
