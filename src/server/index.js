@@ -210,7 +210,7 @@ export async function createMCPServer(config) {
         end_date: z
           .string()
           .describe("End time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
-        call_back: z
+        callback: z
           .string()
           .describe(
             "Comma-separated list of field groups to return (e.g. 'outdoor.temp,indoor.humidity'). " +
@@ -230,14 +230,14 @@ export async function createMCPServer(config) {
     },
     async (args) => {
       try {
-        const { mac, start_date, end_date, call_back, cycle_type, ...rest } = args;
+        const { mac, start_date, end_date, callback, cycle_type, ...rest } = args;
         const formattedMac = formatMacAddress(mac);
         const unitOptions = extractUnitOptions(rest);
         const historyData = await deviceHandlers.getDeviceHistory(
           formattedMac,
           start_date,
           end_date,
-          call_back,
+          callback,
           cycle_type,
           unitOptions
         );
