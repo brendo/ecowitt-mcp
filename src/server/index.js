@@ -207,9 +207,7 @@ export async function createMCPServer(config) {
         start_date: z
           .string()
           .describe("Start time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
-        end_date: z
-          .string()
-          .describe("End time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
+        end_date: z.string().describe("End time of data query in device timezone (ISO-like: 'YYYY-MM-DD HH:mm:ss')."),
         callback: z
           .string()
           .describe(
@@ -219,9 +217,7 @@ export async function createMCPServer(config) {
         cycle_type: z
           .string()
           .optional()
-          .describe(
-            "Data resolution: 'auto', '5min', '30min', '4hour', or '1day' (defaults to 'auto' if omitted)."
-          ),
+          .describe("Data resolution: 'auto', '5min', '30min', '4hour', or '1day' (defaults to 'auto' if omitted)."),
         ...UnitOptionsSchema,
       },
       outputSchema: {

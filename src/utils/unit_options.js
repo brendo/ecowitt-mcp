@@ -33,9 +33,7 @@ export const UnitOptionsSchema = {
     .min(6)
     .max(11)
     .optional()
-    .describe(
-      "Wind speed unit (optional): 6 = m/s, 7 = km/h, 8 = knots, 9 = mph (default), 10 = BFT, 11 = fpm."
-    ),
+    .describe("Wind speed unit (optional): 6 = m/s, 7 = km/h, 8 = knots, 9 = mph (default), 10 = BFT, 11 = fpm."),
   rainfall_unitid: z
     .number()
     .int()
