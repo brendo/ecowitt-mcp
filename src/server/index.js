@@ -125,6 +125,13 @@ export async function createMCPServer(config) {
 
         return {
           structuredContent: { devices },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ devices }, null, 2),
+              contentType: "application/json",
+            },
+          ],
         };
       } catch (error) {
         server.server.sendLoggingMessage({
@@ -259,8 +266,17 @@ export async function createMCPServer(config) {
       },
     },
     async () => {
+      const datetime = new Date().toISOString();
+
       return {
-        structuredContent: { datetime: new Date().toISOString() },
+        structuredContent: { datetime },
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ datetime }, null, 2),
+            contentType: "application/json",
+          },
+        ],
       };
     }
   );
