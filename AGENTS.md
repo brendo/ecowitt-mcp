@@ -80,13 +80,12 @@ Pick a device and reuse its `mac` value as input to the other tools.
     - Examples: `"all"`, `"outdoor"`, `"indoor.humidity"`.  
     - If omitted, a sensible default set of fields is returned.
   - **Unit options (all optional)**:
-    - `temp_unitid`: `1` = °C, `2` = °F (default if omitted)  
-    - `pressure_unitid`: `3` = hPa, `4` = inHg (default), `5` = mmHg  
-    - `wind_speed_unitid`:  
-      `6` = m/s, `7` = km/h, `8` = knots, `9` = mph (default), `10` = BFT, `11` = fpm  
-    - `rainfall_unitid`: `12` = mm, `13` = in (default)  
-    - `solar_irradiance_unitid`: `14` = lux, `15` = fc, `16` = W/m² (default)  
-    - `capacity_unitid`: `24` = L (default), `25` = m³, `26` = gal  
+    - `temp_unitid`: `"C"` = °C, `"F"` = °F (default if omitted)  
+    - `pressure_unitid`: `"hPa"`, `"inHg"` (default), or `"mmHg"`  
+    - `wind_speed_unitid`: `"mps"`, `"kmh"`, `"knots"`, `"mph"` (default), `"bft"`, or `"fpm"`  
+    - `rainfall_unitid`: `"mm"` or `"in"` (default)  
+    - `solar_irradiance_unitid`: `"lux"`, `"fc"`, or `"Wm2"` (default)  
+    - `capacity_unitid`: `"L"` (default), `"m3"`, or `"gal"`  
   - If you are **unsure about units, omit all unit fields** and defaults will be used.
 
 **Typical usage (defaults for units)**
@@ -108,8 +107,8 @@ Pick a device and reuse its `mac` value as input to the other tools.
   "arguments": {
     "mac": "<mac from get_devices>",
     "callback": "outdoor",
-    "temp_unitid": 1,
-    "wind_speed_unitid": 9
+    "temp_unitid": "C",
+    "wind_speed_unitid": "mph"
   }
 }
 ```
