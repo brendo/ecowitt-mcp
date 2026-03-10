@@ -1,15 +1,15 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
   "files": {
     "includes": [
       "**/*.js",
       "**/*.json",
       "**/*.md",
-      "!**/node_modules/**",
-      "!**/dist/**",
-      "!**/build/**",
-      "!**/coverage/**",
-      "!**/.git/**"
+      "!**/node_modules",
+      "!**/dist",
+      "!**/build",
+      "!**/coverage",
+      "!**/.git"
     ]
   },
   "formatter": {
