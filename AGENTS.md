@@ -131,10 +131,10 @@ Pick a device and reuse its `mac` value as input to the other tools.
   - **`end_date`** (string):  
     - End of time range, in the **device’s timezone**.  
     - Same format: `"YYYY-MM-DD HH:mm:ss"`.
-  - **`call_back`** (string):  
+  - **`callback`** (string):
     - Comma‑separated list of field groups to return.  
+  - If you’re unsure which groups/fields are supported for a device, first call `get_device_realtime_info` with `callback: "all"` and use the returned top‑level groups/fields as a starting point for history queries.
     - Examples:  
-      - `"all"`  
       - `"outdoor.temp,indoor.humidity"`
 - **Optional input**:
   - **`cycle_type`** (string, optional):  
@@ -209,7 +209,7 @@ If unsure about units, **do not include any unit fields**.
 4. Call `get_device_historical_info` with:
    - `mac`: device’s `mac`  
    - `start_date`, `end_date`  
-   - `callback`: `"all"` or specific groups like `"outdoor.temp,indoor.humidity"`.
+   - `callback`: specific groups/fields like `"outdoor.temp,indoor.humidity"`.
 
 ### 4. Dealing with errors
 
