@@ -211,8 +211,8 @@ export async function createMCPServer(config) {
         callback: z
           .string()
           .describe(
-            "Comma-separated list of field groups to return (e.g. 'outdoor.temp,indoor.humidity'). " +
-              "Use 'all' to return all available fields."
+            "Comma-separated list of field groups/fields to return (e.g. 'outdoor.temp,indoor.humidity'). " +
+              "If you're unsure what's supported for your device, first call get_device_realtime_info with callback='all' and use the returned top-level groups/fields as a starting point."
           ),
         cycle_type: z
           .string()
